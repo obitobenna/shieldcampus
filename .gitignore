@@ -12,3 +12,5 @@ supabase/.branches
 worker/node_modules
 worker/data
 .next-verify
+
+.vercel

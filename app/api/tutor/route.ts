@@ -17,6 +17,17 @@ export const maxDuration = 60;
 const STREAM_ERROR = "\u0000ERR";
 const HISTORY_TURNS = 10;
 
+const CUT_OFF_TAIL: Record<"en" | "pcm", string> = {
+  en: "\n\nSorry, my answer got cut off. I can help with money privacy, Zcash, wallets and staying safe. Please ask your question again, or try one about this lesson.",
+  pcm: "\n\nSorry, my answer cut for middle. I fit help with money privacy, Zcash, wallet and how to stay safe. Abeg ask your question again, or ask about this lesson.",
+};
+
+// A very short answer that doesn't end like a sentence was almost certainly truncated.
+function looksCutOff(answer: string): boolean {
+  const t = answer.trim();
+  return t.length > 0 && t.length < 40 && !/[.!?)"'*]$/.test(t);
+}
+
 export interface TutorHistoryItem {
   role: "user" | "assistant";
   content: string;
@@ -113,6 +124,12 @@ export const POST = withApi(async (request: Request) => {
             answer += delta;
             controller.enqueue(encoder.encode(delta));
           }
+        }
+        // Rarely the provider stops after a fragment (e.g. "Ah,"). Finish politely instead of leaving it hanging.
+        if (looksCutOff(answer)) {
+          const tail = CUT_OFF_TAIL[language];
+          answer += tail;
+          controller.enqueue(encoder.encode(tail));
         }
       } catch (err) {
         failed = true;

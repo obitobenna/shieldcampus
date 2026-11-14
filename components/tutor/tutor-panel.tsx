@@ -196,7 +196,7 @@ export function TutorPanel({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed bottom-4 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-brand px-5 font-medium text-white shadow-sm transition-colors duration-150 ease-out hover:bg-brand-hover lg:hidden",
+          "fixed bottom-4 right-4 z-30 inline-flex h-12 items-center gap-2 rounded-md bg-brand px-5 font-medium text-white shadow-sm transition-colors duration-150 ease-out hover:bg-brand-hover lg:hidden",
           open && "hidden",
         )}
       >

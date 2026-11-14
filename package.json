@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "seed": "node --env-file=.env.local --import tsx scripts/seed.ts",
-    "make-admin": "node --env-file=.env.local --import tsx scripts/make-admin.ts"
+    "make-admin": "node --env-file=.env.local --import tsx scripts/make-admin.ts",
+    "translate": "node --env-file=.env.local --import tsx scripts/translate.ts"
   },
   "engines": {
     "node": ">=20.6"

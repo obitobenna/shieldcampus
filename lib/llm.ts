@@ -19,18 +19,25 @@ export class LlmError extends Error {
 interface LlmConfig {
   apiKey: string;
   baseUrl: string;
-  model: string;
+  // Primary model first, then the optional fallback (used when the primary is overloaded).
+  models: string[];
 }
 
 function config(): LlmConfig | null {
   const apiKey = process.env.LLM_API_KEY?.trim();
   if (!apiKey) return null;
+  const primary = process.env.LLM_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const fallback = process.env.LLM_FALLBACK_MODEL?.trim();
   return {
     apiKey,
     baseUrl: (process.env.LLM_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/+$/, ""),
-    model: process.env.LLM_MODEL?.trim() || "llama-3.3-70b-versatile",
+    models: fallback && fallback !== primary ? [primary, fallback] : [primary],
   };
 }
+
+// Provider is busy or rate-limiting: worth retrying.
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function llmConfigured(): boolean {
   return config() !== null;
@@ -52,22 +59,45 @@ async function request(messages: ChatMessage[], stream: boolean, opts: Options):
   opts.signal?.addEventListener("abort", () => controller.abort(opts.signal?.reason), { once: true });
 
   try {
-    const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages,
-        stream,
-        max_tokens: opts.maxTokens ?? 600,
-        temperature: opts.temperature ?? 0.4,
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const detail = (await res.text().catch(() => "")).slice(0, 300);
-      throw new LlmError(`AI provider returned ${res.status}: ${detail}`, "upstream");
+    // Try each model with a short back-off; overloaded providers usually recover within seconds.
+    const attempts = cfg.models.flatMap((model) => [
+      { model, wait: 0 },
+      { model, wait: 1200 },
+    ]);
+    let res: Response | null = null;
+    let lastError = "";
+    for (const { model, wait } of attempts) {
+      if (wait) await sleep(wait);
+      if (controller.signal.aborted) break;
+      let attempt: Response;
+      try {
+        attempt = await fetch(`${cfg.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model,
+            messages,
+            stream,
+            max_tokens: opts.maxTokens ?? 600,
+            temperature: opts.temperature ?? 0.4,
+          }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        // Timeout or caller cancelled: stop. Network blip (DNS, reset): retry.
+        if (controller.signal.aborted) throw err;
+        lastError = `Could not reach the AI provider (${model}): ${err instanceof Error ? err.message : String(err)}`;
+        continue;
+      }
+      if (attempt.ok) {
+        res = attempt;
+        break;
+      }
+      const detail = (await attempt.text().catch(() => "")).slice(0, 300);
+      lastError = `AI provider returned ${attempt.status} for ${model}: ${detail}`;
+      if (!RETRYABLE.has(attempt.status)) throw new LlmError(lastError, "upstream");
     }
+    if (!res) throw new LlmError(lastError || "AI provider unavailable.", "upstream");
     if (!stream) clearTimeout(timer);
     // For streams the timer keeps running as an overall cap and is cleared when the stream ends.
     if (stream && res.body) {
@@ -118,6 +148,22 @@ export async function* streamCompletion(messages: ChatMessage[], opts: Options =
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+
+  // Returns the text in one SSE line, null for non-content lines, or "done" for the end marker.
+  const parseLine = (raw: string): string | null | "done" => {
+    const line = raw.trim();
+    if (!line.startsWith("data:")) return null;
+    const payload = line.slice(5).trim();
+    if (payload === "[DONE]") return "done";
+    try {
+      const chunk = JSON.parse(payload) as { choices?: { delta?: { content?: unknown } }[] };
+      const delta = chunk.choices?.[0]?.delta?.content;
+      return typeof delta === "string" && delta ? delta : null;
+    } catch {
+      return null; // keep-alive or malformed line
+    }
+  };
+
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -125,20 +171,15 @@ export async function* streamCompletion(messages: ChatMessage[], opts: Options =
       buffer += decoder.decode(value, { stream: true });
       let newline: number;
       while ((newline = buffer.indexOf("\n")) !== -1) {
-        const line = buffer.slice(0, newline).trim();
+        const parsed = parseLine(buffer.slice(0, newline));
         buffer = buffer.slice(newline + 1);
-        if (!line.startsWith("data:")) continue;
-        const payload = line.slice(5).trim();
-        if (payload === "[DONE]") return;
-        try {
-          const chunk = JSON.parse(payload) as { choices?: { delta?: { content?: string } }[] };
-          const delta = chunk.choices?.[0]?.delta?.content;
-          if (delta) yield delta;
-        } catch {
-          // Ignore keep-alive or malformed lines.
-        }
+        if (parsed === "done") return;
+        if (parsed) yield parsed;
       }
     }
+    // A final line without a trailing newline.
+    const last = parseLine(buffer + decoder.decode());
+    if (last && last !== "done") yield last;
   } finally {
     reader.releaseLock();
   }
