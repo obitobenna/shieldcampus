@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ApiError, parseJson, withApi } from "@/lib/api";
 import { requireApiSession } from "@/lib/auth";
-import type { ClaimStatus } from "@/lib/database.types";
+import type { ClaimStatus, Database } from "@/lib/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adminClaimActionSchema } from "@/lib/validation/rewards";
 import { buildZip321Uri, zecToZatoshis } from "@/lib/zcash";
@@ -36,7 +36,7 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
   }
 
   const now = new Date().toISOString();
-  let update: Partial<typeof claim>;
+  let update: Database["public"]["Tables"]["reward_claims"]["Update"];
 
   switch (input.action) {
     case "approve": {
