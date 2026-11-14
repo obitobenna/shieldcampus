@@ -65,6 +65,6 @@ export const getApprovedVendors = unstable_cache(
     return data ?? [];
   },
   ["approved-vendors"],
-  { revalidate: 60 },
+  { revalidate: 60, tags: ["vendors"] },
 );
 

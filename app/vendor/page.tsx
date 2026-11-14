@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, Store } from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { Steps, type Step } from "@/components/ui/steps";
 import { ShopForm } from "@/components/vendor/shop-form";
 import { requirePageSession } from "@/lib/auth";
@@ -69,6 +70,8 @@ export default async function VendorHomePage() {
           ? "Type an amount in naira, show the QR code, and confirm when it lands in your wallet."
           : "Your till opens once your shop is approved.",
       state: shop?.status === "approved" ? "current" : "upcoming",
+      href: shop?.status === "approved" ? "/pos" : undefined,
+      action: shop?.status === "approved" ? "Open your till" : undefined,
     },
   ];
 
@@ -89,9 +92,21 @@ export default async function VendorHomePage() {
           )}
         </div>
         {shop ? (
-          <Badge tone={STATUS[shop.status].tone} dot className="self-start sm:self-auto">
-            {STATUS[shop.status].label}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+            <Badge tone={STATUS[shop.status].tone} dot>
+              {STATUS[shop.status].label}
+            </Badge>
+            {shop.status === "approved" ? (
+              <>
+                <ButtonLink href="/vendor/sales" variant="secondary" size="sm">
+                  Sales
+                </ButtonLink>
+                <ButtonLink href="/pos" size="sm">
+                  Open till
+                </ButtonLink>
+              </>
+            ) : null}
+          </div>
         ) : null}
       </div>
 

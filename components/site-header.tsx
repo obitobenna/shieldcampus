@@ -9,15 +9,17 @@ const NAV: Record<UserRole, { href: string; label: string }[]> = {
   student: [
     { href: "/learn", label: "Lessons" },
     { href: "/rewards", label: "Rewards" },
+    { href: "/vendors", label: "Vendors" },
     { href: "/account", label: "Account" },
   ],
   vendor: [
-    { href: "/vendor", label: "My shop" },
-    { href: "/learn", label: "Lessons" },
+    { href: "/pos", label: "Till" },
+    { href: "/vendor/sales", label: "Sales" },
+    { href: "/vendor", label: "Shop" },
     { href: "/account", label: "Account" },
   ],
   admin: [
-    { href: "/admin", label: "Payouts" },
+    { href: "/admin", label: "Admin" },
     { href: "/learn", label: "Lessons" },
     { href: "/account", label: "Account" },
   ],
@@ -37,12 +39,13 @@ export async function SiteHeader() {
                 {item.label}
               </NavLink>
             ))}
-            <span className="ml-1">
+            <span className="ml-1 hidden sm:inline-flex">
               <LogoutButton />
             </span>
           </nav>
         ) : (
-          <nav aria-label="Account" className="flex items-center gap-2">
+          <nav aria-label="Account" className="flex items-center gap-1 sm:gap-2">
+            <NavLink href="/vendors">Vendors</NavLink>
             <ButtonLink href="/login" variant="ghost" size="sm">
               Log in
             </ButtonLink>

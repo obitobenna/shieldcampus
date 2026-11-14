@@ -2,8 +2,8 @@ import Link from "next/link";
 import { forwardRef, type ButtonHTMLAttributes, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "zec";
-type Size = "md" | "lg" | "sm";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "zec" | "success";
+type Size = "md" | "lg" | "sm" | "xl";
 
 const base =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50";
@@ -14,12 +14,14 @@ const variants: Record<Variant, string> = {
   ghost: "text-ink hover:bg-ink/5",
   danger: "bg-danger text-white hover:bg-danger/90",
   zec: "bg-zec text-ink hover:bg-zec/90",
+  success: "bg-success text-white hover:bg-success/90",
 };
 
 const sizes: Record<Size, string> = {
   sm: "h-9 px-3 text-sm",
   md: "h-11 px-4 text-base",
   lg: "h-14 px-6 text-lg",
+  xl: "h-16 px-6 text-lg font-semibold",
 };
 
 export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string): string {

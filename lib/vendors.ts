@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { VendorRow } from "@/lib/database.types";
 
@@ -34,3 +35,26 @@ export async function uniqueSlug(name: string, excludeVendorId?: string): Promis
   }
   return `${base}-${Date.now().toString(36)}`;
 }
+
+export interface DirectoryVendor {
+  slug: string;
+  business_name: string;
+  category: VendorRow["category"];
+  location: string;
+  description: string | null;
+}
+
+// Public vendor directory: approved shops only, no addresses or owner details.
+export const getVendorDirectory = unstable_cache(
+  async (): Promise<DirectoryVendor[]> => {
+    const { data, error } = await createAdminClient()
+      .from("vendors")
+      .select("slug, business_name, category, location, description")
+      .eq("status", "approved")
+      .order("business_name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  },
+  ["vendor-directory"],
+  { revalidate: 60, tags: ["vendors"] },
+);

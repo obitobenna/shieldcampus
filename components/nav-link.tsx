@@ -7,7 +7,9 @@ import { cn } from "@/lib/cn";
 
 export function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
-  const active = pathname === href || pathname.startsWith(`${href}/`);
+  // "/vendor" owns /vendor and /vendor/*, except /vendor/sales which has its own tab.
+  const active =
+    pathname === href || (pathname.startsWith(`${href}/`) && !(href === "/vendor" && pathname.startsWith("/vendor/sales")));
   return (
     <Link
       href={href}

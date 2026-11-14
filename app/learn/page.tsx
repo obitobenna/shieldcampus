@@ -50,7 +50,7 @@ export default async function LearnPage() {
       title: "Spend it on campus",
       detail: "Pay a vendor who accepts ZEC. Your purchase stays private, even from us.",
       state: "upcoming",
-      href: "/#vendors",
+      href: "/vendors",
       action: "See vendors",
     },
   ];

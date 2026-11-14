@@ -136,7 +136,16 @@ export default async function HomePage() {
 
       {/* Vendors */}
       <section id="vendors" aria-labelledby="vendors-heading" className="page scroll-mt-4 border-t border-line py-16 md:py-20">
-        <SectionHeading id="vendors-heading" eyebrow="Spend it on campus" title="Vendors who accept ZEC" />
+        <SectionHeading
+          id="vendors-heading"
+          eyebrow="Spend it on campus"
+          title="Vendors who accept ZEC"
+          action={
+            <ButtonLink href="/vendors" variant="secondary" size="sm">
+              See all vendors
+            </ButtonLink>
+          }
+        />
         <div className="mt-8">
           <Suspense fallback={<VendorStripSkeleton />}>
             <VendorStrip />

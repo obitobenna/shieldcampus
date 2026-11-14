@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
+import { AdminTabs } from "@/components/admin/admin-tabs";
 import { ClaimsQueue, type QueueClaim } from "@/components/admin/claims-queue";
 import { Stat, StatGrid } from "@/components/ui/stat";
 import { requirePageSession } from "@/lib/auth";
@@ -17,10 +18,11 @@ export default async function AdminPage() {
   const e = env();
   const db = createAdminClient();
 
-  const [{ data: claims, error }, today, rates] = await Promise.all([
+  const [{ data: claims, error }, today, rates, { count: pendingVendors }] = await Promise.all([
     db.from("reward_claims").select("*").order("created_at", { ascending: false }).limit(500),
     claimsToday(),
     getZecRates(),
+    db.from("vendors").select("id", { count: "exact", head: true }).eq("status", "pending"),
   ]);
   if (error) throw new Error(error.message);
 
@@ -63,6 +65,10 @@ export default async function AdminPage() {
         <p className="font-mono text-xs text-ink-muted">
           1 ZEC = {formatNaira(Math.round(rates.ngn))} · ${rates.usd.toFixed(2)} ({rates.source === "coingecko" ? "CoinGecko" : "fallback rate"})
         </p>
+      </div>
+
+      <div className="mt-8">
+        <AdminTabs current="payouts" pendingVendors={pendingVendors ?? 0} />
       </div>
 
       <StatGrid className="mt-8 grid-cols-2 lg:grid-cols-4">

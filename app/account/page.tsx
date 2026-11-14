@@ -7,6 +7,7 @@ import { ProfileForm } from "@/components/account/profile-form";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
+import { LogoutButton } from "@/components/logout-button";
 import { requirePageSession } from "@/lib/auth";
 import type { UserRole } from "@/lib/database.types";
 import { env } from "@/lib/env";
@@ -135,6 +136,10 @@ export default async function AccountPage({
               <li>If someone claiming to be ShieldCampus asks for your phrase, it is a scam. Report it to the team at the help desk.</li>
             </ul>
           </Section>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface px-5 py-4 sm:px-6">
+            <p className="text-sm text-ink-muted">Signed in as {email}</p>
+            <LogoutButton />
+          </div>
         </div>
       </div>
     </div>
