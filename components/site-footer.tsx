@@ -4,7 +4,7 @@ import { EVENT_NAME } from "@/lib/site";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-line">
+    <footer className="mt-24 border-t border-line print:hidden">
       <div className="page grid gap-8 py-10 md:grid-cols-12">
         <div className="md:col-span-5">
           <Logo />

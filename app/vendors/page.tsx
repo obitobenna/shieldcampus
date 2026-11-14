@@ -8,6 +8,7 @@ import type { VendorCategory } from "@/lib/database.types";
 import { cn } from "@/lib/cn";
 import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { getVendorDirectory, type DirectoryVendor } from "@/lib/vendors";
+import { COIN } from "@/lib/network";
 
 export const metadata: Metadata = {
   title: "Vendors who accept ZEC",
@@ -34,8 +35,8 @@ export default async function VendorsPage({ searchParams }: { searchParams: Prom
       <p className="eyebrow">Spend it on campus</p>
       <h1 className="mt-2 text-xl md:text-2xl">Vendors who accept ZEC</h1>
       <p className="mt-3 max-w-prose text-ink-muted">
-        Pay with your shielded wallet: the vendor shows a QR code with the price in naira, you scan and confirm. Nobody else
-        can see what you bought.
+        Pay with your shielded wallet: scan the QR sticker at the shop (or tap Pay below), type the price in naira and confirm
+        in your wallet. Or let the vendor show you a QR with the price. Nobody else can see what you bought.
       </p>
 
       {present.length > 1 ? (
@@ -64,15 +65,20 @@ export default async function VendorsPage({ searchParams }: { searchParams: Prom
               <div className="flex items-start justify-between gap-3">
                 <p className="font-semibold">{v.business_name}</p>
                 <Badge tone="zec" dot className="shrink-0">
-                  Accepts ZEC
+                  Accepts {COIN}
                 </Badge>
               </div>
               <p className="text-sm text-ink-muted">{VENDOR_CATEGORY_LABEL[v.category]}</p>
               {v.description ? <p className="text-sm">{v.description}</p> : null}
-              <p className="mt-auto flex items-center gap-1.5 pt-2 text-sm text-ink-muted">
-                <MapPin aria-hidden className="h-4 w-4 shrink-0" />
-                {v.location}
-              </p>
+              <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+                <p className="flex min-w-0 items-center gap-1.5 text-sm text-ink-muted">
+                  <MapPin aria-hidden className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{v.location}</span>
+                </p>
+                <ButtonLink href={`/pay/${v.slug}`} size="sm" variant="zec" className="shrink-0">
+                  Pay
+                </ButtonLink>
+              </div>
             </li>
           ))}
         </ul>

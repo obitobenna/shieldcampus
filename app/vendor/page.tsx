@@ -11,6 +11,7 @@ import { env } from "@/lib/env";
 import { getUserProgress, listLessons } from "@/lib/lessons";
 import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { getShopForOwner } from "@/lib/vendors";
+import { COIN } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Your shop" };
 
@@ -101,6 +102,9 @@ export default async function VendorHomePage() {
                 <ButtonLink href="/vendor/sales" variant="secondary" size="sm">
                   Sales
                 </ButtonLink>
+                <ButtonLink href="/vendor/qr" variant="secondary" size="sm">
+                  Shop QR
+                </ButtonLink>
                 <ButtonLink href="/pos" size="sm">
                   Open till
                 </ButtonLink>
@@ -181,10 +185,15 @@ export default async function VendorHomePage() {
           <div className="rounded-lg border border-line bg-surface p-5">
             <p className="font-semibold">How getting paid works</p>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-ink-muted marker:font-mono">
-              <li>Type the price in naira. ShieldCampus converts it to ZEC at the live rate.</li>
+              <li>Type the price in naira. ShieldCampus converts it to {COIN} at the live rate.</li>
               <li>The student scans your QR code and pays from their wallet.</li>
               <li>When the payment shows in your wallet, tap Paid.</li>
             </ol>
+            <p className="mt-4 text-sm font-semibold">Faster at busy times</p>
+            <p className="mt-1 text-sm text-ink-muted">
+              Print your <Link href="/vendor/qr" className="font-medium text-brand underline underline-offset-4">shop QR</Link>{" "}
+              once. Customers scan it, type the price and pay from their own phone. Their payments appear on your till.
+            </p>
           </div>
 
           <div className="rounded-lg border border-danger/30 bg-danger-soft p-5">

@@ -50,7 +50,7 @@ export const PUT = withApi(async (request: Request) => {
         .from("vendors")
         .update({
           ...fields,
-          slug: existing.business_name === input.businessName ? existing.slug : await uniqueSlug(input.businessName, existing.id),
+          // The slug never changes after creation: it's printed on the shop's "scan to pay" QR sticker.
           status,
           ...(needsReapproval ? { approved_at: null, approved_by: null } : {}),
         })

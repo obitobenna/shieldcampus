@@ -58,3 +58,11 @@ export const getVendorDirectory = unstable_cache(
   ["vendor-directory"],
   { revalidate: 60, tags: ["vendors"] },
 );
+
+/** An approved shop by its public slug (used by the "scan the shop QR" pay page). */
+export async function getApprovedShopBySlug(slug: string): Promise<VendorRow | null> {
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) return null;
+  const { data, error } = await createAdminClient().from("vendors").select("*").eq("slug", slug).eq("status", "approved").maybeSingle();
+  if (error) throw new Error(`Loading shop failed: ${error.message}`);
+  return data;
+}

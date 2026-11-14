@@ -5,9 +5,10 @@ import { KeypadTerminal } from "@/components/pos/keypad-terminal";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requirePageSession } from "@/lib/auth";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatZec } from "@/lib/format";
 import { getZecRates } from "@/lib/rates";
-import { isApproved } from "@/lib/sales";
+import { cancelAbandonedSales, isApproved, listIncoming } from "@/lib/sales";
+import { IncomingPayments } from "@/components/pos/incoming-payments";
 import { getShopForOwner } from "@/lib/vendors";
 import { COIN, DEMO_SUFFIX } from "@/lib/network";
 
@@ -38,7 +39,8 @@ export default async function PosPage() {
     );
   }
 
-  const rates = await getZecRates();
+  await cancelAbandonedSales(shop.id);
+  const [rates, incoming] = await Promise.all([getZecRates(), listIncoming(shop.id)]);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-10 pt-6">
@@ -50,11 +52,27 @@ export default async function PosPage() {
             {DEMO_SUFFIX}
           </p>
         </div>
-        <Link href="/vendor/sales" className="shrink-0 text-sm font-medium text-brand underline underline-offset-4">
-          Sales
-        </Link>
+        <span className="flex shrink-0 items-baseline gap-3">
+          <Link href="/vendor/qr" className="text-sm font-medium text-brand underline underline-offset-4">
+            Shop QR
+          </Link>
+          <Link href="/vendor/sales" className="text-sm font-medium text-brand underline underline-offset-4">
+            Sales
+          </Link>
+        </span>
       </div>
-      <KeypadTerminal ngnPerZec={rates.ngn} rateIsFallback={rates.source === "fallback"} />
+      <IncomingPayments
+        initial={incoming.map((s) => ({
+          id: s.id,
+          amountNgn: Number(s.amount_ngn),
+          amountZec: formatZec(Number(s.amount_zec)),
+          note: s.note,
+          createdAt: s.created_at,
+        }))}
+      />
+      <div className="mt-5">
+        <KeypadTerminal ngnPerZec={rates.ngn} rateIsFallback={rates.source === "fallback"} />
+      </div>
     </div>
   );
 }

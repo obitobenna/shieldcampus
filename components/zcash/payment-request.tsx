@@ -18,6 +18,7 @@ export function PaymentRequest({
   amountZec,
   memo,
   size = "md",
+  walletFirst = false,
   className,
 }: {
   uri: string;
@@ -25,6 +26,8 @@ export function PaymentRequest({
   amountZec: string;
   memo: string;
   size?: "md" | "lg";
+  /** Paying from the same phone: show "Open in wallet" first, the QR below (for paying from another device). */
+  walletFirst?: boolean;
   className?: string;
 }) {
   const [svg, setSvg] = useState<string | null>(null);
@@ -40,7 +43,13 @@ export function PaymentRequest({
     };
   }, [uri]);
 
-  const box = size === "lg" ? "w-full max-w-[340px]" : "w-full max-w-[260px]";
+  const box = size === "lg" ? "w-full max-w-[340px]" : walletFirst ? "w-full max-w-[200px]" : "w-full max-w-[260px]";
+  const openButton = (
+    <a href={uri} className={buttonClasses("zec", walletFirst ? "lg" : "md", "w-full")}>
+      Open in Zcash wallet
+      <ExternalLink aria-hidden className="h-4 w-4" />
+    </a>
+  );
 
   return (
     <div className={cn("space-y-5", className)}>
@@ -49,6 +58,9 @@ export function PaymentRequest({
           <NetworkBadge /> Pay with a testnet wallet (Zingo or Zkool). TAZ has no real value.
         </p>
       ) : null}
+      {walletFirst ? openButton : null}
+
+      {walletFirst ? <p className="text-center text-xs text-ink-muted">Paying from another device? Scan this code with its wallet.</p> : null}
       <div className={cn("mx-auto aspect-square rounded-md border border-line bg-white p-3", box)}>
         {svg ? (
           <div
@@ -66,10 +78,7 @@ export function PaymentRequest({
         )}
       </div>
 
-      <a href={uri} className={buttonClasses("zec", "md", "w-full")}>
-        Open in Zcash wallet
-        <ExternalLink aria-hidden className="h-4 w-4" />
-      </a>
+      {walletFirst ? null : openButton}
 
       <dl className="divide-y divide-line rounded-md border border-line bg-surface text-sm">
         <Detail label="Amount" value={`${amountZec} ${COIN}`} copyValue={amountZec} />

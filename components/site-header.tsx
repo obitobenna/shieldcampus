@@ -30,7 +30,7 @@ export async function SiteHeader() {
   const session = await getSession().catch(() => null);
 
   return (
-    <header className="border-b border-line bg-paper">
+    <header className="border-b border-line bg-paper print:hidden">
       <div className="page flex h-16 items-center justify-between gap-3">
         <span className="flex items-center gap-2">
           <Logo compact={!!session} />
