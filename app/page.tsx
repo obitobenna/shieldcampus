@@ -9,10 +9,12 @@ import { VendorStrip, VendorStripSkeleton } from "@/components/landing/vendor-st
 import { SiteFooter } from "@/components/site-footer";
 import { env } from "@/lib/env";
 import { formatZec } from "@/lib/format";
+import { getZecRates } from "@/lib/rates";
 import { CAMPUS_PHOTOS } from "@/lib/site";
 
-export default function HomePage() {
+export default async function HomePage() {
   const reward = formatZec(env().REWARD_ZEC);
+  const rates = await getZecRates();
 
   const steps = [
     {
@@ -86,11 +88,11 @@ export default function HomePage() {
                 priority
               />
               <div className="mt-6">
-                <PaymentPreview />
+                <PaymentPreview ngnPerZec={rates.ngn} />
               </div>
             </div>
           ) : (
-            <PaymentPreview />
+            <PaymentPreview ngnPerZec={rates.ngn} />
           )}
         </div>
       </section>

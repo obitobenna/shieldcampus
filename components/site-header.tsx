@@ -8,6 +8,7 @@ import { NavLink } from "@/components/nav-link";
 const NAV: Record<UserRole, { href: string; label: string }[]> = {
   student: [
     { href: "/learn", label: "Lessons" },
+    { href: "/rewards", label: "Rewards" },
     { href: "/account", label: "Account" },
   ],
   vendor: [
@@ -16,6 +17,7 @@ const NAV: Record<UserRole, { href: string; label: string }[]> = {
     { href: "/account", label: "Account" },
   ],
   admin: [
+    { href: "/admin", label: "Payouts" },
     { href: "/learn", label: "Lessons" },
     { href: "/account", label: "Account" },
   ],

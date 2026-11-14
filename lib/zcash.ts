@@ -192,3 +192,76 @@ export function checkShieldedAddress(input: string, network: ZcashNetwork): Addr
 export function shortAddress(address: string, head = 8, tail = 6): string {
   return address.length <= head + tail + 1 ? address : `${address.slice(0, head)}…${address.slice(-tail)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Amounts. ZEC has 8 decimal places (1 ZEC = 100,000,000 zatoshis). We do the
+// maths in integer zatoshis so amounts are never distorted by floating point.
+// ---------------------------------------------------------------------------
+
+export const ZATOSHIS_PER_ZEC = 100_000_000n;
+const MAX_ZATOSHIS = 21_000_000n * ZATOSHIS_PER_ZEC;
+
+/** "0.01" | 0.01 -> 1000000n. Rejects more than 8 decimals, negatives and > 21M ZEC. */
+export function zecToZatoshis(value: string | number): bigint {
+  const str = typeof value === "number" ? value.toFixed(8) : value.trim();
+  const m = /^(\d+)(?:\.(\d{1,8}))?$/.exec(str);
+  if (!m) throw new Error(`Invalid ZEC amount: ${String(value)}`);
+  const zats = BigInt(m[1]!) * ZATOSHIS_PER_ZEC + BigInt((m[2] ?? "").padEnd(8, "0"));
+  if (zats > MAX_ZATOSHIS) throw new Error("Amount exceeds the ZEC supply.");
+  return zats;
+}
+
+/** 1000000n -> "0.01" (no trailing zeros, at most 8 decimals). */
+export function formatZatoshis(zats: bigint): string {
+  if (zats < 0n) throw new Error("Negative amount.");
+  const whole = zats / ZATOSHIS_PER_ZEC;
+  const frac = (zats % ZATOSHIS_PER_ZEC).toString().padStart(8, "0").replace(/0+$/, "");
+  return frac ? `${whole}.${frac}` : whole.toString();
+}
+
+/** Converts naira to zatoshis at a NGN-per-ZEC rate, rounded up to the nearest zatoshi. */
+export function ngnToZatoshis(ngn: number, ngnPerZec: number): bigint {
+  if (!(ngn > 0) || !(ngnPerZec > 0)) throw new Error("Amount and rate must be positive.");
+  // Work in kobo and a rate scaled to 1e-2 kobo precision to stay in integers.
+  const kobo = BigInt(Math.round(ngn * 100));
+  const rateKobo = BigInt(Math.round(ngnPerZec * 100));
+  return (kobo * ZATOSHIS_PER_ZEC + rateKobo - 1n) / rateKobo;
+}
+
+// ---------------------------------------------------------------------------
+// ZIP-321 payment requests: zcash:<address>?amount=<ZEC>&memo=<base64url>
+// https://zips.z.cash/zip-0321
+// ---------------------------------------------------------------------------
+
+export const MAX_MEMO_BYTES = 512;
+
+/** base64url without padding, as ZIP-321 requires for memos. Works in browser and Node. */
+export function base64UrlEncode(bytes: Uint8Array): string {
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function base64UrlDecode(text: string): Uint8Array {
+  const b64 = text.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+  return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+}
+
+export interface PaymentRequest {
+  address: string;
+  amountZats: bigint;
+  memo?: string;
+}
+
+export function buildZip321Uri({ address, amountZats, memo }: PaymentRequest): string {
+  if (amountZats <= 0n) throw new Error("Amount must be positive.");
+  const params = [`amount=${formatZatoshis(amountZats)}`];
+  if (memo) {
+    const bytes = new TextEncoder().encode(memo);
+    if (bytes.length > MAX_MEMO_BYTES) throw new Error(`Memo is ${bytes.length} bytes; the limit is ${MAX_MEMO_BYTES}.`);
+    // Memos are only valid for shielded recipients; ShieldCampus only ever pays shielded addresses.
+    params.push(`memo=${base64UrlEncode(bytes)}`);
+  }
+  return `zcash:${address}?${params.join("&")}`;
+}

@@ -275,12 +275,17 @@ function Quiz({
                   </p>
                   <p className="mt-1 text-sm text-ink/80">
                     {rewardEligible
-                      ? "This lesson earns a shielded ZEC reward. You can claim it once reward claims open for your account."
+                      ? "This lesson earns a shielded ZEC reward. Claim it on your Rewards page."
                       : "Lesson complete. Your progress is saved."}
                   </p>
                 </div>
               </div>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                {rewardEligible ? (
+                  <ButtonLink href="/rewards" variant="zec">
+                    Claim your reward
+                  </ButtonLink>
+                ) : null}
                 {nextLesson ? (
                   <ButtonLink href={`/learn/${nextLesson.slug}`}>
                     Next: {nextLesson.title}

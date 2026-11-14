@@ -31,7 +31,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
 export function homeForRole(role: UserRole): string {
   switch (role) {
     case "admin":
-      return "/account";
+      return "/admin";
     case "vendor":
       return "/vendor";
     default:

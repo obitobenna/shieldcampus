@@ -43,6 +43,8 @@ export default async function LearnPage() {
       title: "Earn your first ZEC",
       detail: `${rewardsUnlocked} of ${rewardLessons.length} rewards unlocked · ${reward} ZEC each`,
       state: rewardsUnlocked === rewardLessons.length && rewardLessons.length > 0 ? "done" : walletDone ? "current" : "upcoming",
+      href: rewardsUnlocked > 0 ? "/rewards" : undefined,
+      action: rewardsUnlocked > 0 ? "Claim your rewards" : undefined,
     },
     {
       title: "Spend it on campus",
