@@ -11,6 +11,8 @@ import { formatNaira } from "@/lib/format";
 import { SALE_MAX_NGN, SALE_MIN_NGN } from "@/lib/validation/pos";
 import { formatZatoshis, ngnToZatoshis } from "@/lib/zcash";
 import type { CreateSaleResponse } from "@/app/api/pos/sales/route";
+import { NetworkBadge } from "@/components/zcash/network-badge";
+import { COIN, DEMO_VALUE_NOTE, IS_TESTNET } from "@/lib/network";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "0", "back"] as const;
 
@@ -66,7 +68,9 @@ export function KeypadTerminal({ ngnPerZec, rateIsFallback }: { ngnPerZec: numbe
   return (
     <div className="flex flex-col gap-5">
       <section aria-label="Amount" className="rounded-lg border border-line bg-surface px-5 py-6 text-center">
-        <p className="eyebrow">Amount</p>
+        <p className="eyebrow flex items-center justify-center gap-2">
+          Amount <NetworkBadge />
+        </p>
         <p
           aria-live="polite"
           className={cn(
@@ -77,7 +81,8 @@ export function KeypadTerminal({ ngnPerZec, rateIsFallback }: { ngnPerZec: numbe
         >
           {formatNaira(amount)}
         </p>
-        <p className="mt-3 font-mono text-sm text-ink-muted">≈ {zec} ZEC</p>
+        <p className="mt-3 font-mono text-sm text-ink-muted">≈ {zec} {COIN}</p>
+        {IS_TESTNET ? <p className="mt-1 text-xs text-ink-muted">Naira price is a {DEMO_VALUE_NOTE}.</p> : null}
         {tooBig ? (
           <p className="mt-2 text-sm text-danger">The largest sale is {formatNaira(SALE_MAX_NGN)}.</p>
         ) : amount > 0 && amount < SALE_MIN_NGN ? (

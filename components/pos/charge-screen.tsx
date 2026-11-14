@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { CheckCircle2, ChevronDown, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, SearchCheck, XCircle } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PaymentRequest } from "@/components/zcash/payment-request";
@@ -12,6 +12,7 @@ import type { SaleStatus } from "@/lib/database.types";
 import { fetchJson } from "@/lib/fetch-json";
 import { formatNaira } from "@/lib/format";
 import type { SaleActionResponse } from "@/app/api/pos/sales/[id]/route";
+import { COIN, DEMO_SUFFIX } from "@/lib/network";
 
 interface Sale {
   id: number;
@@ -27,19 +28,21 @@ interface Sale {
   txid: string | null;
 }
 
-export function ChargeScreen({ sale }: { sale: Sale }) {
+export function ChargeScreen({ sale, autoVerify = false }: { sale: Sale; autoVerify?: boolean }) {
   const router = useRouter();
   const [status, setStatus] = useState<SaleStatus>(sale.status);
   const [txid, setTxid] = useState("");
   const [showTxid, setShowTxid] = useState(false);
-  const [busy, setBusy] = useState<"paid" | "cancel" | null>(null);
+  const [busy, setBusy] = useState<"paid" | "cancel" | "check" | null>(null);
+  const [checkMessage, setCheckMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
 
-  async function act(e: FormEvent | null, action: "paid" | "cancel") {
+  async function act(e: FormEvent | null, action: "paid" | "cancel" | "check") {
     e?.preventDefault();
     setBusy(action);
     setError(null);
+    setCheckMessage(null);
     const res = await fetchJson<SaleActionResponse>(`/api/pos/sales/${sale.id}`, {
       method: "POST",
       json: action === "paid" ? { action, txid: txid.trim() || undefined } : { action },
@@ -47,6 +50,10 @@ export function ChargeScreen({ sale }: { sale: Sale }) {
     setBusy(null);
     if (!res.ok) {
       setError(res.error);
+      return;
+    }
+    if (res.data.check && !res.data.check.found) {
+      setCheckMessage(res.data.check.message);
       return;
     }
     setStatus(res.data.status);
@@ -66,7 +73,7 @@ export function ChargeScreen({ sale }: { sale: Sale }) {
           <p className="mt-4 font-display text-xl font-semibold">{paid ? "Payment received" : "Sale cancelled"}</p>
           <p className="mt-2 font-mono text-2xl">{formatNaira(sale.amountNgn)}</p>
           <p className="mt-1 font-mono text-sm text-ink-muted">
-            {sale.amountZec} ZEC · sale #{sale.id}
+            {sale.amountZec} {COIN} · sale #{sale.id}
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -86,9 +93,10 @@ export function ChargeScreen({ sale }: { sale: Sale }) {
       <section aria-label="Amount due" className="text-center">
         <p className="eyebrow">Customer pays</p>
         <p className="mt-2 font-mono text-[56px] font-medium leading-none tracking-tight">{formatNaira(sale.amountNgn)}</p>
-        <p className="mt-3 font-mono text-base">{sale.amountZec} ZEC</p>
+        <p className="mt-3 font-mono text-base">{sale.amountZec} {COIN}</p>
         <p className="mt-1 text-xs text-ink-muted">
-          Rate locked at {formatNaira(Math.round(sale.rateNgn))} / ZEC{sale.rateIsFallback ? " (backup rate)" : ""}
+          Rate locked at {formatNaira(Math.round(sale.rateNgn))} / {COIN}{sale.rateIsFallback ? " (backup rate)" : ""}
+          {DEMO_SUFFIX}
           {sale.note ? ` · ${sale.note}` : ""}
         </p>
       </section>
@@ -99,6 +107,16 @@ export function ChargeScreen({ sale }: { sale: Sale }) {
         Ask the customer to scan with their Zcash wallet. Tap <span className="font-semibold text-ink">Mark as paid</span> only
         after the payment shows up in your wallet.
       </div>
+
+      {autoVerify ? (
+        <div className="space-y-2">
+          <Button variant="secondary" size="lg" className="w-full" onClick={() => act(null, "check")} loading={busy === "check"}>
+            <SearchCheck aria-hidden className="h-5 w-5" />
+            Check payment automatically
+          </Button>
+          {checkMessage ? <p className="text-center text-sm text-ink-muted" role="status">{checkMessage}</p> : null}
+        </div>
+      ) : null}
 
       <form onSubmit={(e) => act(e, "paid")} className="space-y-3">
         <button

@@ -8,12 +8,14 @@ import { LanguageToggle } from "@/components/lesson/language-toggle";
 import { LessonActivities } from "@/components/lesson/lesson-activities";
 import { LessonMarkdown } from "@/components/lesson/lesson-markdown";
 import { PidginLoader } from "@/components/lesson/pidgin-loader";
+import { TESTNET_CHECKPOINT_LABELS, TestnetWalletGuide } from "@/components/lesson/testnet-wallet-guide";
 import { TutorPanel } from "@/components/tutor/tutor-panel";
 import { requirePageSession } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { getCachedPidgin } from "@/lib/lesson-translations";
 import { getLessonBySlug, getPublicQuiz, getUserProgress, listLessons, markStarted, parseStringArray, passMark } from "@/lib/lessons";
 import { llmConfigured } from "@/lib/llm";
+import { COIN, IS_TESTNET } from "@/lib/network";
 import { tutorStarters } from "@/lib/tutor-starters";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ lang?: string }> };
@@ -50,6 +52,11 @@ export default async function LessonPage({ params, searchParams }: Props) {
   const completedCount = lessons.filter((l) => progress.get(l.id)?.status === "completed").length;
   const showReward = session.profile.role === "student" && lesson.reward_eligible;
   const langQuery = lang === "pcm" ? "?lang=pcm" : "";
+  // On testnet, Lesson 3 points students at Zingo / Zkool and utest1 addresses instead of mainnet wallets.
+  const testnetWalletLesson = IS_TESTNET && lesson.slug === "wallet-setup";
+  const checkpoints = testnetWalletLesson
+    ? lesson.checkpoints.map((c) => ({ ...c, label: TESTNET_CHECKPOINT_LABELS[c.id] ?? c.label }))
+    : lesson.checkpoints;
 
   return (
     <div className="page pb-24 pt-8 md:pt-12 lg:pb-12">
@@ -107,7 +114,7 @@ export default async function LessonPage({ params, searchParams }: Props) {
                   <Clock aria-hidden className="h-3.5 w-3.5" />
                   {lesson.estimated_minutes} min
                 </span>
-                {showReward ? <Badge tone="zec">Earns ZEC</Badge> : null}
+                {showReward ? <Badge tone="zec">Earns {COIN}</Badge> : null}
                 {mine?.status === "completed" ? (
                   <Badge tone="success" dot>
                     Completed
@@ -120,6 +127,7 @@ export default async function LessonPage({ params, searchParams }: Props) {
           </header>
 
           <div className="mt-8 max-w-prose border-t border-line pt-8">
+            {testnetWalletLesson ? <TestnetWalletGuide /> : null}
             {waitingForPidgin ? (
               <PidginLoader slug={lesson.slug} englishContent={lesson.content} />
             ) : (
@@ -135,7 +143,7 @@ export default async function LessonPage({ params, searchParams }: Props) {
             ) : null}
             <LessonActivities
               slug={lesson.slug}
-              checkpoints={lesson.checkpoints}
+              checkpoints={checkpoints}
               initialDone={parseStringArray(mine?.checkpoints_done)}
               questions={questions}
               passMark={passMark(questions.length)}

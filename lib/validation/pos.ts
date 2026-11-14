@@ -29,6 +29,8 @@ export const saleActionSchema = z.discriminatedUnion("action", [
       .refine((v) => v === undefined || /^[0-9a-f]{64}$/.test(v), "A transaction ID is 64 characters of 0-9 and a-f. Leave it empty if you don't have it."),
   }),
   z.object({ action: z.literal("cancel") }),
+  // Level 2 only: ask the Zallet wallet whether the payment has arrived.
+  z.object({ action: z.literal("check") }),
 ]);
 
 export const vendorActionSchema = z.object({

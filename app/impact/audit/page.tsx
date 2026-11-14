@@ -12,6 +12,7 @@ import { env } from "@/lib/env";
 import { formatCount, formatNaira, formatZec } from "@/lib/format";
 import { getAuditRows } from "@/lib/impact";
 import { explorerUrl, VERIFICATION_LABEL } from "@/lib/verification";
+import { COIN } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Sponsor audit", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -76,8 +77,8 @@ async function AuditTable() {
   return (
     <div className="space-y-6">
       <StatGrid className="grid-cols-2 lg:grid-cols-4">
-        <Stat label="Reward payouts" value={formatCount(rewards.length)} note={`${formatZec(rewards.reduce((s, r) => s + r.amountZec, 0))} ZEC`} accent />
-        <Stat label="Merchant payments" value={formatCount(sales.length)} note={`${formatZec(sales.reduce((s, r) => s + r.amountZec, 0))} ZEC`} />
+        <Stat label="Reward payouts" value={formatCount(rewards.length)} note={`${formatZec(rewards.reduce((s, r) => s + r.amountZec, 0))} ${COIN}`} accent />
+        <Stat label="Merchant payments" value={formatCount(sales.length)} note={`${formatZec(sales.reduce((s, r) => s + r.amountZec, 0))} ${COIN}`} />
         <Stat label="Merchant volume" value={formatNaira(sales.reduce((s, r) => s + (r.amountNgn ?? 0), 0))} />
         <Stat label="With transaction ID" value={`${formatCount(withTxid)} / ${formatCount(rows.length)}`} note="Rewards always have one" />
       </StatGrid>
@@ -93,7 +94,7 @@ async function AuditTable() {
                   <th scope="col" className="px-4 py-3 font-semibold">Date (WAT)</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Type</th>
                   <th scope="col" className="px-4 py-3 font-semibold">ID</th>
-                  <th scope="col" className="px-4 py-3 text-right font-semibold">ZEC</th>
+                  <th scope="col" className="px-4 py-3 text-right font-semibold">{COIN}</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Transaction ID</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Verification</th>
                 </tr>

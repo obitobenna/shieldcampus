@@ -14,6 +14,7 @@ import { getZecRates } from "@/lib/rates";
 import { getClaimsForUser } from "@/lib/rewards";
 import { explorerUrl } from "@/lib/verification";
 import { shortAddress } from "@/lib/zcash";
+import { COIN, DEMO_SUFFIX, UNIFIED_PREFIX } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Rewards" };
 
@@ -37,13 +38,13 @@ export default async function RewardsPage() {
       <p className="eyebrow">Earn</p>
       <h1 className="mt-2 text-xl md:text-2xl">Your rewards</h1>
       <p className="mt-3 max-w-prose text-ink-muted">
-        Pass the wallet lessons and claim {formatZec(e.REWARD_ZEC)} ZEC for each one, sent privately to your shielded address.
+        Pass the wallet lessons and claim {formatZec(e.REWARD_ZEC)} {COIN} for each one, sent privately to your shielded address.
         A ShieldCampus admin checks each claim before paying it.
       </p>
 
       <StatGrid className="mt-8 grid-cols-2 lg:grid-cols-3">
-        <Stat label="Received" value={`${formatZec(paidZec)} ZEC`} accent note={`${paid.length} of ${eligible.length} rewards paid`} />
-        <Stat label="Available to earn" value={`${formatZec(potentialZec)} ZEC`} note={`≈ ${formatNaira(Math.round(potentialZec * rates.ngn))} at today's rate`} />
+        <Stat label="Received" value={`${formatZec(paidZec)} ${COIN}`} accent note={`${paid.length} of ${eligible.length} rewards paid`} />
+        <Stat label="Available to earn" value={`${formatZec(potentialZec)} ${COIN}`} note={`≈ ${formatNaira(Math.round(potentialZec * rates.ngn))} at today's rate${DEMO_SUFFIX}`} />
         <Stat
           label="Paid to"
           className="col-span-2 lg:col-span-1"
@@ -58,7 +59,7 @@ export default async function RewardsPage() {
 
       {!address ? (
         <Alert tone="warning" title="Add your shielded address to claim" className="mt-6">
-          Your reward needs somewhere to go. Set up a wallet in Lesson 3, then save your u1 address on your{" "}
+          Your reward needs somewhere to go. Set up a wallet in Lesson 3, then save your {UNIFIED_PREFIX} address on your{" "}
           <Link href="/account#wallet" className="font-medium text-brand underline underline-offset-4">
             Account page
           </Link>
@@ -80,7 +81,7 @@ export default async function RewardsPage() {
                   <p className="mt-0.5 font-semibold">{lesson.title}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm">{formatZec(e.REWARD_ZEC)} ZEC</span>
+                  <span className="font-mono text-sm">{formatZec(e.REWARD_ZEC)} {COIN}</span>
                   {claim ? <ClaimBadge status={claim.status} /> : null}
                 </div>
               </div>

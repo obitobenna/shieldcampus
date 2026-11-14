@@ -57,7 +57,7 @@ Privacy here isn't about hiding wrongdoing. It's the digital version of not post
 flowchart LR
   subgraph Phone["Student / vendor phone"]
     B[Browser: Next.js UI]
-    W[(Zcash wallet<br/>Zodl, Ywallet, Zingo)]
+    W[(Zcash wallet<br/>testnet: Zingo, Zkool<br/>mainnet: Zodl, Ywallet, Zingo)]
   end
 
   subgraph Vercel["Vercel: Next.js App Router"]
@@ -74,7 +74,8 @@ flowchart LR
   LLM[OpenAI-compatible LLM<br/>Gemini / Groq / OpenRouter]
   CG[CoinGecko API]
   Z[(Zcash network<br/>shielded pool)]
-  WK[Optional Level 2 worker<br/>view-only light wallet]
+  WK[Optional Level 2: Zallet<br/>viewing keys only]
+  N[Zcash JSON-RPC node<br/>Zebra or hosted provider]
 
   B -- HTTPS --> P
   P --> A
@@ -84,14 +85,17 @@ flowchart LR
   B -. scans ZIP-321 QR .-> W
   W -- shielded tx + encrypted memo --> Z
   WK -. viewing key reads memos .-> Z
-  WK -. marks verified .-> D
+  P -. verify memo + amount .-> WK
+  P -. getblockchaininfo .-> N
+  N --- Z
 ```
 
 - **One Next.js app** holds both the frontend and the API routes, with TypeScript strict throughout.
 - **Every write goes through a server route:** zod validation, then a role check (student, vendor or admin), then a write with the service role. Browsers can only *read* their own rows under Row Level Security, and quiz answers are never sent to the browser.
 - **Rate limits** on login, sign-up, tutor, claim, POS and audit PIN live in Postgres (`check_rate_limit`), so they hold across serverless instances.
 - **No spending keys anywhere.** Payouts are sent from the reward fund wallet on an admin's phone by scanning the ZIP-321 QR. The app only ever holds addresses, txids and (optionally, server-side only) a viewing key.
-- **`verifyPayment(record)`** (`lib/verification.ts`) returns `verified | pending`. Level 1: a person records the txid (`verified_by = manual`). Level 2: an optional worker sets `verified_by = viewing_key`. The app never depends on Level 2.
+- **`verifyPayment(record)`** (`lib/verification.ts`) returns `verified | pending`. Level 1: a person records the txid (`verified_by = manual`). Level 2: the optional `ZalletVerifier` (`lib/payment-verifier.ts`, `PAYMENT_VERIFIER=zallet`) matches memo + amount through your own Zallet wallet and sets `verified_by = viewing_key`. The app never depends on Level 2 and falls back to manual automatically.
+- **Network config** (`lib/network.ts`): `ZCASH_NETWORK=testnet|mainnet` drives address validation, the TAZ/ZEC ticker and the TESTNET badge. `lib/zcash-rpc.ts` is a small typed JSON-RPC client (timeouts, typed errors) used for the node status at `GET /api/zcash/status`.
 
 ## Run it locally
 
@@ -127,9 +131,38 @@ npm run make-admin -- you@example.com # after signing up, grant yourself admin
 
 ### 4. Checks
 ```bash
-npm test          # Vitest: ZIP-321, address checksums, secret detection, lesson content
+npm test          # Vitest: ZIP-321, address checksums + networks, RPC client, payment matching, secret detection, lessons
 npm run typecheck
 ```
+
+## Running on testnet
+
+ShieldCampus runs on the **Zcash testnet by default** (`ZCASH_NETWORK=testnet`). Testnet coins are called **TAZ** and have no real value, so you can rehearse every flow end to end without spending money. While on testnet, the app shows a **TESTNET** badge in the header and on every payment screen, labels amounts as TAZ, and marks naira prices as *demo value (testnet coins have no real value)*. The conversion maths is the same as on mainnet, so the demo looks identical.
+
+1. **Install a testnet wallet.** Zodl doesn't support testnet, so use **Zingo** or **Zkool** (both have mobile and desktop apps). Switch the app to **testnet** before you create the wallet, then write the recovery phrase on paper as usual. Do this for each role: one wallet for the reward fund (admin), one per demo student and one per demo vendor.
+2. **Copy the addresses.** On testnet a shielded unified address starts with `utest1` (Sapling: `ztestsapling1`). ShieldCampus rejects mainnet `u1…`/`zs1…` addresses and transparent `tm…` addresses, and explains why.
+3. **Get TAZ** for the reward fund wallet from the faucet shared at the Zcash workshop or by the Zcash community. Fund it with `REWARD_ZEC × expected students × 2`, plus fees.
+4. **Set up an RPC provider (optional).** Create a Zcash **testnet JSON-RPC** endpoint with a provider such as Tatum, Zec.rocks or QuickNode, and copy its exact URL and API key from the provider's dashboard. It must be a JSON-RPC (Zebra-compatible) endpoint; a lightwalletd/gRPC endpoint won't answer `getblockcount`. Without one, everything still works; the status line just says "no node configured".
+5. **Fill in `.env.local`:**
+   ```
+   ZCASH_NETWORK=testnet
+   ZCASH_RPC_URL=<exact URL from your provider>
+   ZCASH_RPC_API_KEY=<key, if your provider uses one>
+   ZCASH_RPC_API_KEY_HEADER=x-api-key        # change if your provider documents a different header
+   REWARD_FUND_ADDRESS=utest1...             # the reward fund wallet's address
+   REWARD_FUND_VIEWING_KEY=uviewtest1...     # optional, view-only
+   PAYMENT_VERIFIER=manual
+   ```
+   Restart `npm run dev`. `/admin` and `/impact` should show **Connected to Zcash testnet · block #N**, and `GET /api/zcash/status` returns the same as JSON. If the node is on the wrong chain or the fund address is for the wrong network, `/admin` says so.
+6. **Optional Level 2 verification with Zallet.** If you run your own Zallet wallet with the reward fund's (and optionally vendors') **viewing keys** imported, set `PAYMENT_VERIFIER=zallet` plus `ZALLET_RPC_URL`, `ZALLET_RPC_USER` and `ZALLET_RPC_PASSWORD`. Then:
+   - when an admin records a reward txid, the server checks that transaction (`z_viewtransaction`) for the memo `ShieldCampus reward #<id>` and the amount (±1%), and marks it `verified_by = viewing_key` on a match;
+   - the vendor charge screen gets a **Check payment automatically** button that looks for `ShieldCampus sale #<id>` at the vendor's address (`z_listunspent`) and marks the sale paid.
+
+   If Zallet is unreachable or a method isn't supported, the app falls back to manual txid confirmation. Nothing crashes, and Level 1 always works. Spending keys are never used or stored, and the viewing key and RPC credentials stay server-side.
+
+**Switching to mainnet later:** set `ZCASH_NETWORK=mainnet`, change `REWARD_FUND_ADDRESS` (and the viewing key) to the mainnet wallet's `u1…`/`uview1…`, point `ZCASH_RPC_URL` at a mainnet endpoint, and redeploy. Students and vendors must save their mainnet `u1…` addresses again, because testnet addresses are rejected. Testnet claims and sales stay in the database as history; clear them first if you don't want them in the mainnet impact numbers.
+
+**Privacy trade-off:** a public RPC provider can see your server's IP address and the calls it makes (block-height lookups). It never sees users' wallets, because ShieldCampus doesn't send addresses or keys to it. For full privacy, run your own Zebra node and point `ZCASH_RPC_URL` at it (the testnet RPC default is `http://127.0.0.1:18232`).
 
 ## Deploy to Vercel
 
@@ -147,9 +180,9 @@ Dependencies are pinned in `package-lock.json`, and the project `.npmrc` keeps i
 2. **Fund it** with enough ZEC for `REWARD_ZEC × expected students × 2`, plus fees. Check today's price on `/admin` or `/impact` and set `REWARD_ZEC` and `DAILY_REWARD_CAP` to match your budget.
 3. **Pay rewards:** in `/admin`, click **Approve**, scan the QR with the fund wallet, send, paste the txid and click **Mark as paid**.
 4. **Export the viewing key** for sponsors. In your wallet, look for the option to export or back up the *unified full viewing key* (it starts with `uview1…`). Ywallet and Zingo offer this; the exact menu varies by version. Share it only with sponsors and auditors. It can see the fund's payments but cannot spend.
-5. **Optional Level 2 worker:** put the same key in `REWARD_FUND_UFVK` (and the wallet's birthday height in `REWARD_FUND_BIRTHDAY_HEIGHT`) for a view-only light wallet that matches memos and marks rewards `verified_by = viewing_key`. This is on the roadmap; Level 1 manual txids work without it.
+5. **Optional Level 2 verification:** put the same key in `REWARD_FUND_VIEWING_KEY`, import it into your own Zallet wallet, and set `PAYMENT_VERIFIER=zallet` (see [Running on testnet](#running-on-testnet), step 6). Level 1 manual txids work without it.
 
-**Practising without real money:** every flow can be rehearsed with a made-up 64-character txid. For one real on-chain test, set `REWARD_ZEC=0.0001` (about ₦120 at today's price) and send one real payout.
+**Practising without real money:** use testnet (the default, see [Running on testnet](#running-on-testnet)) and pay with TAZ from Zingo or Zkool. Every flow can also be rehearsed with a made-up 64-character txid.
 
 ## 3-minute live demo script
 
@@ -157,7 +190,7 @@ Dependencies are pinned in `package-lock.json`, and the project `.npmrc` keeps i
 |---|---|---|
 | 0:00–0:20 | Presenter | Homepage: *"Your first private payment starts here."* Point at the **live numbers**: real students from this conference. |
 | 0:20–1:00 | Student (phone) | Sign up, open **Lesson 3: Set up your Zcash wallet**, and tap **Pidgin**. Ask the tutor *"Make I share my seed phrase with support?"* and show it refuse. Paste 12 words and show the red block: the phrase never left the phone. |
-| 1:00–1:30 | Student | Tick the checkpoints, pass the quiz, save the `u1…` address (paste a `t1…` first to show the rejection), then **Claim reward**. |
+| 1:00–1:30 | Student | Tick the checkpoints, pass the quiz, save the `utest1…` address from Zingo/Zkool (paste a `tm…` or a mainnet `u1…` first to show the rejection), then **Claim reward**. |
 | 1:30–2:00 | Admin (laptop) | **Admin → Approve**: the ZIP-321 QR appears. Scan it with the reward fund wallet and send. Paste the txid and click **Mark as paid**. The student's phone shows **Paid** with the txid. |
 | 2:00–2:35 | Vendor (phone) | **Till**: type ₦1,500 for printing and tap **Charge**. The QR shows the ZEC at the live rate. The student scans with Zodl and pays, then the vendor taps **Mark as paid**. |
 | 2:35–3:00 | Presenter | **/impact**: the counts have moved. Open **/impact/audit**, enter the PIN, and show every payout by ID and txid with no names or addresses. *"Sponsors can audit every payout; the public sees nothing individual. A viewing key cannot spend."* |
@@ -191,7 +224,7 @@ The **sponsor audit** (`/impact/audit`, protected by `AUDIT_PIN`) lists every re
 
 - **More campuses.** UNN first, then UNEC, UNILAG and UI, with a campus field on vendors and per-campus impact.
 - **Pollar cash-out to naira.** Let vendors convert ZEC to naira through Pollar (integration point planned in `lib/pollar.ts`).
-- **Automatic viewing-key verification.** The Level 2 worker: a view-only light wallet that syncs every 30 seconds, reads memos and marks payouts verified without anyone typing a txid.
+- **Fully automatic viewing-key verification.** Today Level 2 checks on demand through Zallet. Next: a background job that polls every 30 seconds and marks payouts verified without anyone typing a txid.
 - **Vendor loyalty rewards.** Small ZEC bonuses for a student's first purchase at a new vendor, funded by sponsors.
 - **More Nigerian languages.** Igbo, Yoruba and Hausa lessons and tutor answers, next to English and Pidgin.
 
@@ -203,7 +236,9 @@ app/                 Pages and API routes (App Router)
                      admin (claims, vendors), pos (sales), impact (audit, csv)
 components/          UI kit (ui/), lesson, tutor, pos, admin, impact, zcash
 lib/                 zcash.ts (addresses, ZIP-321, zatoshis), llm.ts, tutor.ts, translate.ts,
-                     safety.ts, rates.ts, verification.ts, impact.ts, audit.ts, auth.ts, env.ts
+                     safety.ts, rates.ts, verification.ts, impact.ts, audit.ts, auth.ts, env.ts,
+                     network.ts (testnet/mainnet), zcash-rpc.ts, zcash-status.ts,
+                     payment-verifier.ts + payment-match.ts (Level 1 manual / Level 2 Zallet)
 scripts/             seed.ts, translate.ts, make-admin.ts, content/lessons.ts
 supabase/migrations/ Schema, RLS policies, triggers, rate limiter
 tests/               Vitest unit tests

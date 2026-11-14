@@ -11,6 +11,7 @@ import { formatCount, formatNaira, formatZec } from "@/lib/format";
 import { lagosDayStart } from "@/lib/rewards";
 import { isApproved, listSalesForVendor, totals } from "@/lib/sales";
 import { getShopForOwner } from "@/lib/vendors";
+import { COIN } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Sales" };
 export const dynamic = "force-dynamic";
@@ -44,9 +45,9 @@ export default async function SalesPage() {
 
       <StatGrid className="mt-8 grid-cols-2 lg:grid-cols-4">
         <Stat label="Today" value={formatNaira(todays.ngn)} note={`${formatCount(todays.count)} paid sales`} accent />
-        <Stat label="Today in ZEC" value={formatZec(todays.zec)} note="Received to your wallet" />
+        <Stat label={`Today in ${COIN}`} value={formatZec(todays.zec)} note="Received to your wallet" />
         <Stat label="All time" value={formatNaira(all.ngn)} note={`${formatCount(all.count)} paid sales`} />
-        <Stat label="All time in ZEC" value={formatZec(all.zec)} note="Naira at each sale's locked rate" />
+        <Stat label={`All time in ${COIN}`} value={formatZec(all.zec)} note="Naira at each sale's locked rate" />
       </StatGrid>
 
       {sales.length === 0 ? (
@@ -67,7 +68,7 @@ export default async function SalesPage() {
                   <th scope="col" className="px-4 py-3 font-semibold">Time</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Note</th>
                   <th scope="col" className="px-4 py-3 text-right font-semibold">Naira</th>
-                  <th scope="col" className="px-4 py-3 text-right font-semibold">ZEC</th>
+                  <th scope="col" className="px-4 py-3 text-right font-semibold">{COIN}</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Status</th>
                 </tr>
               </thead>

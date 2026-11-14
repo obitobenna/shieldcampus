@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: true,
   poweredByHeader: false,
+  // The Zcash network is public config, so expose it to client components (TESTNET badge, TAZ ticker).
+  env: {
+    NEXT_PUBLIC_ZCASH_NETWORK: process.env.ZCASH_NETWORK?.trim().toLowerCase() === "mainnet" ? "mainnet" : "testnet",
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

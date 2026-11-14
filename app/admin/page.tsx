@@ -9,6 +9,9 @@ import { formatCount, formatNaira, formatZec } from "@/lib/format";
 import { getZecRates } from "@/lib/rates";
 import { claimsToday } from "@/lib/rewards";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Suspense } from "react";
+import { NetworkStatus, NetworkStatusFallback } from "@/components/zcash/network-status";
+import { COIN, DEMO_SUFFIX } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
@@ -61,9 +64,13 @@ export default async function AdminPage() {
         <div>
           <p className="eyebrow">Admin</p>
           <h1 className="mt-2 text-xl md:text-2xl">Reward payouts</h1>
+          <Suspense fallback={<NetworkStatusFallback className="mt-2" />}>
+            <NetworkStatus showWarning className="mt-2" />
+          </Suspense>
         </div>
         <p className="font-mono text-xs text-ink-muted">
-          1 ZEC = {formatNaira(Math.round(rates.ngn))} · ${rates.usd.toFixed(2)} ({rates.source === "coingecko" ? "CoinGecko" : "fallback rate"})
+          1 {COIN} = {formatNaira(Math.round(rates.ngn))} · ${rates.usd.toFixed(2)} ({rates.source === "coingecko" ? "CoinGecko" : "fallback rate"})
+          {DEMO_SUFFIX}
         </p>
       </div>
 
@@ -73,9 +80,9 @@ export default async function AdminPage() {
 
       <StatGrid className="mt-8 grid-cols-2 lg:grid-cols-4">
         <Stat label="Claims today" value={`${formatCount(today)} / ${formatCount(e.DAILY_REWARD_CAP)}`} note="Daily cap (Lagos time)" />
-        <Stat label="Waiting" value={formatCount(queue.filter((c) => c.status !== "paid" && c.status !== "rejected").length)} note={`${formatZec(owed)} ZEC to pay`} />
-        <Stat label="Paid out" value={`${formatZec(paidZec)} ZEC`} accent note={`${paid.length} rewards · ≈ ${formatNaira(Math.round(paidZec * rates.ngn))}`} />
-        <Stat label="Reward size" value={`${formatZec(e.REWARD_ZEC)} ZEC`} note="Set by REWARD_ZEC" />
+        <Stat label="Waiting" value={formatCount(queue.filter((c) => c.status !== "paid" && c.status !== "rejected").length)} note={`${formatZec(owed)} ${COIN} to pay`} />
+        <Stat label="Paid out" value={`${formatZec(paidZec)} ${COIN}`} accent note={`${paid.length} rewards · ≈ ${formatNaira(Math.round(paidZec * rates.ngn))}`} />
+        <Stat label="Reward size" value={`${formatZec(e.REWARD_ZEC)} ${COIN}`} note="Set by REWARD_ZEC" />
       </StatGrid>
 
       <div className="mt-6 flex items-start gap-3 rounded-lg border border-line bg-surface p-4 text-sm">

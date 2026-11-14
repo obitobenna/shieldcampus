@@ -93,9 +93,55 @@ describe("checkShieldedAddress (mainnet)", () => {
 });
 
 describe("checkShieldedAddress (testnet)", () => {
-  it("accepts testnet addresses and rejects mainnet ones", () => {
-    expect(checkShieldedAddress(unifiedTest, "testnet")).toMatchObject({ ok: true, kind: "unified" });
-    expect(checkShieldedAddress(saplingTest, "testnet")).toMatchObject({ ok: true, kind: "sapling" });
-    expect(checkShieldedAddress(unifiedMain, "testnet")).toMatchObject({ reason: "wrong_network" });
+  it("accepts utest1 unified and ztestsapling1 Sapling addresses", () => {
+    expect(checkShieldedAddress(unifiedTest, "testnet")).toMatchObject({ ok: true, kind: "unified", address: unifiedTest });
+    expect(checkShieldedAddress(saplingTest, "testnet")).toMatchObject({ ok: true, kind: "sapling", address: saplingTest });
+    expect(unifiedTest.startsWith("utest1")).toBe(true);
+    expect(saplingTest.startsWith("ztestsapling1")).toBe(true);
+  });
+
+  it("rejects mainnet addresses with a clear wrong-network message", () => {
+    for (const addr of [unifiedMain, saplingMain, OFFICIAL_UA]) {
+      const r = checkShieldedAddress(addr, "testnet");
+      expect(r).toMatchObject({ ok: false, reason: "wrong_network" });
+      if (!r.ok) expect(r.message).toMatch(/This is a mainnet address, but ShieldCampus is running on testnet/);
+    }
+  });
+
+  it("rejects testnet addresses on mainnet with the mirror message", () => {
+    const r = checkShieldedAddress(saplingTest, "mainnet");
+    expect(r).toMatchObject({ ok: false, reason: "wrong_network" });
+    if (!r.ok) expect(r.message).toMatch(/This is a testnet address, but ShieldCampus is running on mainnet/);
+  });
+
+  it("rejects testnet transparent (tm…) addresses with a friendly explanation", () => {
+    const r = checkShieldedAddress("tmEZhbWHTpdKMw5it8YDspUXSMGQyFwovpU", "testnet");
+    expect(r).toMatchObject({ ok: false, reason: "transparent" });
+    if (!r.ok) {
+      expect(r.message).toMatch(/visible to everyone/);
+      expect(r.message).toMatch(/starts with utest1/);
+      expect(r.message).not.toMatch(/mainnet/);
+    }
+  });
+
+  it("flags a mainnet transparent address on testnet as both transparent and wrong network", () => {
+    const r = checkShieldedAddress("t1Rv4exT7bqhZqi2j7xz8bUHDMxwosrjADU", "testnet");
+    expect(r).toMatchObject({ ok: false, reason: "transparent" });
+    if (!r.ok) expect(r.message).toMatch(/mainnet address, and ShieldCampus is running on testnet/);
+  });
+
+  it("catches typos in testnet addresses via the checksum", () => {
+    expect(checkShieldedAddress(corrupt(unifiedTest), "testnet")).toMatchObject({ ok: false, reason: "checksum" });
+    expect(checkShieldedAddress(corrupt(saplingTest), "testnet")).toMatchObject({ ok: false, reason: "checksum" });
+  });
+
+  it("uses the utest1 prefix in hints", () => {
+    const empty = checkShieldedAddress("", "testnet");
+    if (!empty.ok) expect(empty.message).toMatch(/utest1/);
+    const junk = checkShieldedAddress("hello", "testnet");
+    expect(junk).toMatchObject({ reason: "format" });
+    if (!junk.ok) expect(junk.message).toMatch(/utest1/);
+    const tex = checkShieldedAddress("textest1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", "testnet");
+    expect(tex).toMatchObject({ reason: "tex" });
   });
 });

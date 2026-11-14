@@ -7,6 +7,8 @@ import { buttonClasses } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
+import { NetworkBadge } from "@/components/zcash/network-badge";
+import { COIN, IS_TESTNET } from "@/lib/network";
 
 // A ZIP-321 payment request: big QR code, "Open in Zcash wallet" link, and copy buttons
 // for the address, amount and memo (for wallets that can't scan or open links).
@@ -42,6 +44,11 @@ export function PaymentRequest({
 
   return (
     <div className={cn("space-y-5", className)}>
+      {IS_TESTNET ? (
+        <p className="flex flex-wrap items-center justify-center gap-2 text-center text-xs text-ink-muted">
+          <NetworkBadge /> Pay with a testnet wallet (Zingo or Zkool). TAZ has no real value.
+        </p>
+      ) : null}
       <div className={cn("mx-auto aspect-square rounded-md border border-line bg-white p-3", box)}>
         {svg ? (
           <div
@@ -65,7 +72,7 @@ export function PaymentRequest({
       </a>
 
       <dl className="divide-y divide-line rounded-md border border-line bg-surface text-sm">
-        <Detail label="Amount" value={`${amountZec} ZEC`} copyValue={amountZec} />
+        <Detail label="Amount" value={`${amountZec} ${COIN}`} copyValue={amountZec} />
         <Detail label="Memo" value={memo} />
         <Detail label="Address" value={address} wrap />
       </dl>

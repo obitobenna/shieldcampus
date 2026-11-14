@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { ChargeScreen } from "@/components/pos/charge-screen";
 import { requirePageSession } from "@/lib/auth";
+import { autoVerifyEnabled } from "@/lib/payment-verifier";
 import { formatZec } from "@/lib/format";
 import { getSaleForVendor } from "@/lib/sales";
 import { getShopForOwner } from "@/lib/vendors";
@@ -21,6 +22,7 @@ export default async function ChargePage({ params }: { params: Promise<{ id: str
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-10 pt-6">
       <ChargeScreen
+        autoVerify={autoVerifyEnabled()}
         sale={{
           id: sale.id,
           status: sale.status,

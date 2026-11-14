@@ -9,6 +9,7 @@ import { requirePageSession } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { formatZec } from "@/lib/format";
 import { getUserProgress, listLessons } from "@/lib/lessons";
+import { COIN, UNIFIED_PREFIX } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Lessons" };
 
@@ -34,14 +35,14 @@ export default async function LearnPage() {
     },
     {
       title: "Get a shielded wallet",
-      detail: walletDone ? "Address saved to your account" : "Install a wallet and save your u1 address",
+      detail: walletDone ? "Address saved to your account" : `Install a wallet and save your ${UNIFIED_PREFIX} address`,
       state: walletDone ? "done" : completedCount >= 2 ? "current" : "upcoming",
       href: walletDone ? undefined : walletLesson && progress.get(walletLesson.id)?.status === "completed" ? "/account#wallet" : walletLesson ? `/learn/${walletLesson.slug}` : undefined,
       action: walletDone ? undefined : walletLesson && progress.get(walletLesson.id)?.status === "completed" ? "Save your address" : "Start wallet setup",
     },
     {
       title: "Earn your first ZEC",
-      detail: `${rewardsUnlocked} of ${rewardLessons.length} rewards unlocked · ${reward} ZEC each`,
+      detail: `${rewardsUnlocked} of ${rewardLessons.length} rewards unlocked · ${reward} ${COIN} each`,
       state: rewardsUnlocked === rewardLessons.length && rewardLessons.length > 0 ? "done" : walletDone ? "current" : "upcoming",
       href: rewardsUnlocked > 0 ? "/rewards" : undefined,
       action: rewardsUnlocked > 0 ? "Claim your rewards" : undefined,
@@ -65,7 +66,7 @@ export default async function LearnPage() {
           </h1>
           <p className="mt-3 max-w-prose text-ink-muted">
             {isStudent
-              ? `Five short lessons on money privacy and Zcash. Lessons 3 and 4 each earn a ${reward} ZEC shielded reward.`
+              ? `Five short lessons on money privacy and Zcash. Lessons 3 and 4 each earn a ${reward} ${COIN} shielded reward.`
               : "Five short lessons on money privacy and Zcash. Lessons 3 to 5 show you how to receive payments safely."}
           </p>
 

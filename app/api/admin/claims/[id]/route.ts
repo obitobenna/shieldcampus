@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { ApiError, parseJson, withApi } from "@/lib/api";
 import { requireApiSession } from "@/lib/auth";
-import type { ClaimStatus, Database } from "@/lib/database.types";
+import type { ClaimStatus, Database, VerificationMethod } from "@/lib/database.types";
+import { upgradeVerification } from "@/lib/payment-verifier";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adminClaimActionSchema } from "@/lib/validation/rewards";
 import { buildZip321Uri, zecToZatoshis } from "@/lib/zcash";
@@ -11,6 +12,8 @@ export interface AdminClaimResponse {
   id: number;
   status: ClaimStatus;
   zip321Uri: string | null;
+  /** Set when the claim was just marked paid: "viewing_key" if the optional Zallet check matched it. */
+  verifiedBy?: VerificationMethod | null;
 }
 
 // Which actions are allowed from which status.
@@ -55,7 +58,16 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
     case "paid": {
       const { data: dupe } = await db.from("reward_claims").select("id").eq("txid", input.txid).neq("id", id).maybeSingle();
       if (dupe) throw new ApiError(409, `That transaction ID is already recorded for reward #${dupe.id}.`, { txid: "Already used." });
-      update = { status: "paid", txid: input.txid, paid_at: now, verified_by: "manual", verified_at: now };
+      // Level 1 always; upgraded to Level 2 if PAYMENT_VERIFIER=zallet finds the memo + amount in this tx.
+      const verifiedBy = await upgradeVerification({
+        kind: "reward",
+        id,
+        memo: claim.memo,
+        amountZats: zecToZatoshis(Number(claim.amount_zec)),
+        address: claim.zcash_address,
+        txid: input.txid,
+      });
+      update = { status: "paid", txid: input.txid, paid_at: now, verified_by: verifiedBy, verified_at: now };
       break;
     }
   }
@@ -66,7 +78,7 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
     .update(update)
     .eq("id", id)
     .eq("status", claim.status)
-    .select("id, status, zip321_uri")
+    .select("id, status, zip321_uri, verified_by")
     .maybeSingle();
   if (saveError) {
     if (saveError.code === "23505") throw new ApiError(409, "That transaction ID is already recorded.", { txid: "Already used." });
@@ -75,6 +87,6 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
   if (!saved) throw new ApiError(409, "Someone else just updated this claim. Refresh the page.");
   if (saved.status === "paid") revalidateTag("impact");
 
-  const body: AdminClaimResponse = { id: saved.id, status: saved.status, zip321Uri: saved.zip321_uri };
+  const body: AdminClaimResponse = { id: saved.id, status: saved.status, zip321Uri: saved.zip321_uri, verifiedBy: saved.verified_by };
   return NextResponse.json(body);
 });

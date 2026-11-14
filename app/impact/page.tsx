@@ -10,6 +10,9 @@ import { formatCount, formatNaira, formatZec } from "@/lib/format";
 import { getImpactReport, type ImpactReport } from "@/lib/impact";
 import { getZecRates } from "@/lib/rates";
 import { EVENT_NAME } from "@/lib/site";
+import { Suspense } from "react";
+import { NetworkStatus, NetworkStatusFallback } from "@/components/zcash/network-status";
+import { COIN, DEMO_SUFFIX } from "@/lib/network";
 
 export const metadata: Metadata = {
   title: "Impact",
@@ -44,6 +47,9 @@ export default async function ImpactPage() {
             {report ? (
               <p className="font-mono text-xs text-ink-muted">Updated {updatedFmt.format(new Date(report.generatedAt))} WAT · refreshes every minute</p>
             ) : null}
+            <Suspense fallback={<NetworkStatusFallback />}>
+              <NetworkStatus />
+            </Suspense>
             <Link href="/impact/audit" className="inline-flex items-center gap-1 text-sm font-medium text-brand underline underline-offset-4">
               Sponsor audit view <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>
@@ -78,14 +84,14 @@ export default async function ImpactPage() {
                   label="Rewards paid"
                   value={formatCount(report.rewardsPaid)}
                   accent
-                  note={`${formatZec(report.rewardsPaidZec)} ZEC · ≈ ${formatNaira(Math.round(report.rewardsPaidZec * rates.ngn))}`}
+                  note={`${formatZec(report.rewardsPaidZec)} ${COIN} · ≈ ${formatNaira(Math.round(report.rewardsPaidZec * rates.ngn))}${DEMO_SUFFIX}`}
                 />
                 <Stat label="Active vendors" value={formatCount(report.activeVendors)} note="Approved shops accepting ZEC" />
                 <Stat label="Merchant payments" value={formatCount(report.merchantPayments)} accent note="Paid at campus vendors" />
                 <Stat
                   label="Merchant volume"
                   value={formatNaira(report.merchantVolumeNgn)}
-                  note={`${formatZec(report.merchantVolumeZec)} ZEC at each sale's rate`}
+                  note={`${formatZec(report.merchantVolumeZec)} ${COIN} at each sale's rate${DEMO_SUFFIX}`}
                 />
               </StatGrid>
             </section>

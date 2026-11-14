@@ -4,6 +4,7 @@ import { Logo } from "@/components/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { LogoutButton } from "@/components/logout-button";
 import { NavLink } from "@/components/nav-link";
+import { NetworkBadge } from "@/components/zcash/network-badge";
 
 const NAV: Record<UserRole, { href: string; label: string }[]> = {
   student: [
@@ -32,7 +33,10 @@ export async function SiteHeader() {
   return (
     <header className="border-b border-line bg-paper">
       <div className="page flex h-16 items-center justify-between gap-3">
-        <Logo compact={!!session} />
+        <span className="flex items-center gap-2">
+          <Logo compact={!!session} />
+          <NetworkBadge />
+        </span>
         {session ? (
           <nav aria-label="Main" className="flex items-center gap-1">
             {NAV[session.profile.role].map((item) => (

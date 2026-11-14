@@ -8,7 +8,41 @@ const schema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url({ message: "NEXT_PUBLIC_SUPABASE_URL must be your Supabase project URL" }),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20, "NEXT_PUBLIC_SUPABASE_ANON_KEY is missing"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20, "SUPABASE_SERVICE_ROLE_KEY is missing"),
-  ZCASH_NETWORK: z.enum(["mainnet", "testnet"]).default("mainnet"),
+  ZCASH_NETWORK: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
+    z.enum(["mainnet", "testnet"]).default("testnet"),
+  ),
+
+  // Zcash node JSON-RPC (Zebra-compatible: getblockcount, getblockchaininfo). Optional.
+  // A hosted provider URL, or a local Zebra (http://127.0.0.1:18232 on testnet).
+  ZCASH_RPC_URL: z.string().url("ZCASH_RPC_URL must be a full http(s) URL").optional(),
+  ZCASH_RPC_API_KEY: z.string().optional(),
+  // Header the provider expects the key in. Leave the default unless your provider says otherwise.
+  ZCASH_RPC_API_KEY_HEADER: z.string().min(1).default("x-api-key"),
+  ZCASH_RPC_USER: z.string().optional(),
+  ZCASH_RPC_PASSWORD: z.string().optional(),
+  ZCASH_RPC_TIMEOUT_MS: z.coerce.number().int().min(500).max(30000).default(6000),
+
+  // Optional Level 2 verification through a Zallet wallet you run yourself. Server-side only.
+  PAYMENT_VERIFIER: z.preprocess(
+    (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
+    z.enum(["manual", "zallet"]).default("manual"),
+  ),
+  ZALLET_RPC_URL: z.string().url("ZALLET_RPC_URL must be a full http(s) URL").optional(),
+  ZALLET_RPC_USER: z.string().optional(),
+  ZALLET_RPC_PASSWORD: z.string().optional(),
+
+  // The reward fund's public address and its VIEW-ONLY key. Never a spending key or seed phrase.
+  REWARD_FUND_ADDRESS: z.string().trim().optional(),
+  REWARD_FUND_VIEWING_KEY: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (v) => !v || !/^(secret-extended-key|secret-|usk|zxsk)/i.test(v) && v.split(/\s+/).length < 12,
+      "REWARD_FUND_VIEWING_KEY looks like a SPENDING key or seed phrase. Remove it now: only a viewing key (uview… / uviewtest…) belongs here.",
+    ),
+
   REWARD_ZEC: z.coerce.number().positive().max(10).default(0.01),
   DAILY_REWARD_CAP: z.coerce.number().int().positive().default(50),
   FALLBACK_ZEC_USD: z.coerce.number().positive().default(900),

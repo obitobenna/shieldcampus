@@ -12,6 +12,7 @@ import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { VENDOR_CATEGORIES } from "@/lib/validation/account";
 import { checkShieldedAddress, type ZcashNetwork } from "@/lib/zcash";
 import type { ShopResponse } from "@/app/api/vendor/shop/route";
+import { IS_TESTNET, UNIFIED_PREFIX } from "@/lib/network";
 
 interface ShopValues {
   businessName: string;
@@ -139,7 +140,7 @@ export function ShopForm({
         onChange={(val) => set("zcashAddress", val)}
         network={network}
         serverError={errors.zcashAddress}
-        hint="Use a wallet you control. Open it, tap Receive, copy the u1 address and paste it here."
+        hint={`Use a wallet you control${IS_TESTNET ? " (Zingo or Zkool, switched to testnet)" : ""}. Open it, tap Receive, copy the ${UNIFIED_PREFIX} address and paste it here.`}
       />
 
       {addressChanged && status === "approved" ? (

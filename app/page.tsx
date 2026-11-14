@@ -11,6 +11,7 @@ import { env } from "@/lib/env";
 import { formatZec } from "@/lib/format";
 import { getZecRates } from "@/lib/rates";
 import { CAMPUS_PHOTOS } from "@/lib/site";
+import { COIN } from "@/lib/network";
 
 export default async function HomePage() {
   const reward = formatZec(env().REWARD_ZEC);
@@ -27,7 +28,7 @@ export default async function HomePage() {
       n: "02",
       title: "Earn",
       body: "Set up a shielded wallet, pass the quizzes, and claim a small ZEC reward. For most students, it is their first private transaction.",
-      meta: `${reward} ZEC per eligible lesson`,
+      meta: `${reward} ${COIN} per eligible lesson`,
     },
     {
       n: "03",

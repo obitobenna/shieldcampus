@@ -9,6 +9,7 @@ import { formatNaira } from "@/lib/format";
 import { getZecRates } from "@/lib/rates";
 import { isApproved } from "@/lib/sales";
 import { getShopForOwner } from "@/lib/vendors";
+import { COIN, DEMO_SUFFIX } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Till" };
 export const dynamic = "force-dynamic";
@@ -44,7 +45,10 @@ export default async function PosPage() {
       <div className="mb-5 flex items-baseline justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-lg">{shop.business_name}</h1>
-          <p className="font-mono text-xs text-ink-muted">1 ZEC = {formatNaira(Math.round(rates.ngn))}</p>
+          <p className="font-mono text-xs text-ink-muted">
+            1 {COIN} = {formatNaira(Math.round(rates.ngn))}
+            {DEMO_SUFFIX}
+          </p>
         </div>
         <Link href="/vendor/sales" className="shrink-0 text-sm font-medium text-brand underline underline-offset-4">
           Sales

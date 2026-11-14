@@ -95,11 +95,10 @@ const HRP = {
   testnet: { unified: "utest", sapling: "ztestsapling" },
 } as const;
 
-const NETWORK_NAME: Record<ZcashNetwork, string> = { mainnet: "mainnet", testnet: "testnet" };
-
 export function checkShieldedAddress(input: string, network: ZcashNetwork): AddressCheck {
+  const prefix = `${HRP[network].unified}1`; // "u1" on mainnet, "utest1" on testnet
   const raw = input.trim();
-  if (!raw) return { ok: false, reason: "empty", message: "Paste your shielded address. It starts with u1." };
+  if (!raw) return { ok: false, reason: "empty", message: `Paste your shielded address. It starts with ${prefix}.` };
 
   // Someone pasted words, not an address. Most likely their recovery phrase.
   const words = raw.split(/\s+/);
@@ -119,7 +118,7 @@ export function checkShieldedAddress(input: string, network: ZcashNetwork): Addr
     return {
       ok: false,
       reason: "viewing_key",
-      message: "That's a viewing key, not an address. Copy the address from the Receive screen in your wallet. It starts with u1.",
+      message: `That's a viewing key, not an address. Copy the address from the Receive screen in your wallet. It starts with ${prefix}.`,
     };
   }
   if (/^(secret-extended-key|secret-|usk)/.test(lower)) {
@@ -133,15 +132,17 @@ export function checkShieldedAddress(input: string, network: ZcashNetwork): Addr
     return {
       ok: false,
       reason: "tex",
-      message: "That's a transparent-only (TEX) address. ShieldCampus pays to shielded addresses only. Use the address that starts with u1.",
+      message: `That's a transparent-only (TEX) address. ShieldCampus pays to shielded addresses only. Use the address that starts with ${prefix}.`,
     };
   }
   if (/^(t1|t3|tm|t2)[1-9A-HJ-NP-Za-km-z]{20,}$/.test(addr)) {
+    // t1/t3 = mainnet transparent, tm/t2 = testnet transparent.
+    const addrNet: ZcashNetwork = /^(tm|t2)/.test(addr) ? "testnet" : "mainnet";
+    const netNote = addrNet !== network ? ` It's also a ${addrNet} address, and ShieldCampus is running on ${network}.` : "";
     return {
       ok: false,
       reason: "transparent",
-      message:
-        "That's a transparent address (it starts with t). Payments to it are visible to everyone on the internet, which defeats the point. Use your shielded address instead: it starts with u1.",
+      message: `That's a transparent address (it starts with ${addr.slice(0, 2)}). Payments to it are visible to everyone on the internet, which defeats the point.${netNote} Use your shielded address instead: it starts with ${prefix}.`,
     };
   }
 
@@ -150,7 +151,10 @@ export function checkShieldedAddress(input: string, network: ZcashNetwork): Addr
     return {
       ok: false,
       reason: "wrong_network",
-      message: `That's a ${NETWORK_NAME[other]} address, but ShieldCampus runs on Zcash ${NETWORK_NAME[network]}. Check your wallet's network setting.`,
+      message:
+        network === "testnet"
+          ? `This is a mainnet address, but ShieldCampus is running on testnet. Switch your wallet (Zingo or Zkool) to testnet and copy the address that starts with utest1.`
+          : `This is a testnet address, but ShieldCampus is running on mainnet. Use your real wallet's address that starts with u1.`,
     };
   }
 

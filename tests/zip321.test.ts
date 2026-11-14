@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  bytesTo5bit,
+  checkShieldedAddress,
+  encodeBech32,
   base64UrlDecode,
   base64UrlEncode,
   buildZip321Uri,
@@ -67,5 +70,27 @@ describe("ZIP-321", () => {
     expect(() => buildZip321Uri({ address: "zs1x", amountZats: 1n, memo: "₦".repeat(171) })).toThrow(/513 bytes/);
     expect(buildZip321Uri({ address: "zs1x", amountZats: 1n, memo: "a".repeat(512) })).toContain("memo=");
     expect(() => buildZip321Uri({ address: "zs1x", amountZats: 0n })).toThrow();
+  });
+});
+
+describe("ZIP-321 on testnet", () => {
+  const utest = encodeBech32("utest", bytesTo5bit(Uint8Array.from({ length: 61 }, (_, i) => (i * 13 + 5) & 0xff)), "bech32m");
+
+  it("builds a URI for a validated utest1 address, unchanged in format", () => {
+    const check = checkShieldedAddress(utest, "testnet");
+    expect(check.ok).toBe(true);
+    const uri = buildZip321Uri({ address: utest, amountZats: zecToZatoshis("0.01"), memo: "ShieldCampus reward #7" });
+    expect(uri).toBe(`zcash:${utest}?amount=0.01&memo=U2hpZWxkQ2FtcHVzIHJld2FyZCAjNw`);
+    // The address goes in verbatim (lowercase bech32m, no escaping needed).
+    expect(uri.slice("zcash:".length).split("?")[0]).toBe(utest);
+  });
+
+  it("formats TAZ amounts exactly like ZEC (8 decimals, no float drift, no trailing zeros)", () => {
+    expect(buildZip321Uri({ address: utest, amountZats: 1n })).toBe(`zcash:${utest}?amount=0.00000001`);
+    expect(buildZip321Uri({ address: utest, amountZats: 10_000n })).toBe(`zcash:${utest}?amount=0.0001`);
+    expect(buildZip321Uri({ address: utest, amountZats: 150_000_000n })).toBe(`zcash:${utest}?amount=1.5`);
+    expect(buildZip321Uri({ address: utest, amountZats: ngnToZatoshis(2500, 1_220_000) })).toBe(`zcash:${utest}?amount=0.00204919`);
+    // Never scientific notation, even for tiny amounts.
+    expect(buildZip321Uri({ address: utest, amountZats: 5n })).not.toMatch(/e-/);
   });
 });

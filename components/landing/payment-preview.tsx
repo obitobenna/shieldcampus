@@ -1,6 +1,7 @@
 import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatNaira } from "@/lib/format";
+import { COIN, DEMO_SUFFIX, UNIFIED_PREFIX } from "@/lib/network";
 import { formatZatoshis, ngnToZatoshis } from "@/lib/zcash";
 
 const EXAMPLE_NGN = 2500;
@@ -26,13 +27,14 @@ export function PaymentPreview({ ngnPerZec }: { ngnPerZec: number }) {
           <p className="text-xs text-ink-muted">Jollof rice, plantain and chicken</p>
           <p className="mt-1 font-mono text-[40px] font-medium leading-none tracking-tight">{formatNaira(EXAMPLE_NGN)}</p>
           <p className="mt-2 font-mono text-sm text-ink-muted">
-            {zec} ZEC at {formatNaira(Math.round(ngnPerZec))} / ZEC
+            {zec} {COIN} at {formatNaira(Math.round(ngnPerZec))} / {COIN}
+            {DEMO_SUFFIX}
           </p>
         </div>
 
         <dl className="grid grid-cols-[96px_1fr] gap-y-2 border-t border-line px-5 py-4 text-sm">
           <dt className="text-ink-muted">Pay to</dt>
-          <dd className="truncate font-mono text-xs leading-5">u1 shielded address</dd>
+          <dd className="truncate font-mono text-xs leading-5">{UNIFIED_PREFIX} shielded address</dd>
           <dt className="text-ink-muted">Memo</dt>
           <dd className="font-mono text-xs leading-5">ShieldCampus sale #128</dd>
         </dl>
