@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* RGB channels so Tailwind opacity modifiers work. Hex in comments. */
+  --paper: 247 246 242;
+  --surface: 255 255 255;
+  --ink: 17 20 24;
+  --ink-muted: 94 102 112;
+  --line: 228 225 216;
+  --brand: 15 61 46;
+  --brand-hover: 10 46 34;
+  --brand-soft: 227 238 232;
+  --zec: 244 183 40;
+  --zec-soft: 253 243 217;
+  --zec-ink: 107 77 0;
+  --success: 30 122 76;
+  --success-soft: 228 241 234;
+  --warning: 183 121 31;
+  --warning-soft: 251 240 221;
+  --warning-ink: 138 90 18;
+  --danger: 180 65 47;
+  --danger-soft: 248 230 226;
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-paper font-sans text-base text-ink antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-semibold tracking-[-0.02em] text-ink;
+  }
+  ::selection {
+    background: rgb(var(--brand-soft));
+    color: rgb(var(--ink));
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .page {
+    @apply mx-auto w-full max-w-page px-4 sm:px-6 lg:px-8;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.08em] text-ink-muted;
+  }
+  .hairline {
+    @apply border-t border-line;
+  }
+}
