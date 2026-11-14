@@ -20,6 +20,7 @@ const NAV: Record<UserRole, { href: string; label: string }[]> = {
   ],
   admin: [
     { href: "/admin", label: "Admin" },
+    { href: "/impact", label: "Impact" },
     { href: "/learn", label: "Lessons" },
     { href: "/account", label: "Account" },
   ],
@@ -45,7 +46,10 @@ export async function SiteHeader() {
           </nav>
         ) : (
           <nav aria-label="Account" className="flex items-center gap-1 sm:gap-2">
-            <NavLink href="/vendors">Vendors</NavLink>
+            <span className="hidden sm:contents">
+              <NavLink href="/vendors">Vendors</NavLink>
+            </span>
+            <NavLink href="/impact">Impact</NavLink>
             <ButtonLink href="/login" variant="ghost" size="sm">
               Log in
             </ButtonLink>

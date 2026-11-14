@@ -123,6 +123,11 @@ export default async function HomePage() {
       <section aria-labelledby="impact-heading" className="page py-16 md:py-20">
         <SectionHeading
           id="impact-heading"
+          action={
+            <ButtonLink href="/impact" variant="secondary" size="sm">
+              See the full impact dashboard
+            </ButtonLink>
+          }
           eyebrow="Live from our database"
           title="Real students. Real shielded payments."
           body="These numbers update every minute. Totals only: no individual student or payment is ever shown publicly."

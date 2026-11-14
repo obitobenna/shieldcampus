@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { ApiError, parseJson, withApi } from "@/lib/api";
 import { requireApiSession } from "@/lib/auth";
 import type { ClaimStatus, Database } from "@/lib/database.types";
@@ -72,6 +73,7 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
     throw new Error(saveError.message);
   }
   if (!saved) throw new ApiError(409, "Someone else just updated this claim. Refresh the page.");
+  if (saved.status === "paid") revalidateTag("impact");
 
   const body: AdminClaimResponse = { id: saved.id, status: saved.status, zip321Uri: saved.zip321_uri };
   return NextResponse.json(body);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { ApiError, parseJson, withApi } from "@/lib/api";
 import { requireApiSession } from "@/lib/auth";
 import type { Database, SaleStatus } from "@/lib/database.types";
@@ -57,6 +58,7 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
     throw new Error(error.message);
   }
   if (!saved) throw new ApiError(409, "This sale was just updated. Refresh to see it.");
+  if (saved.status === "paid") revalidateTag("impact");
 
   const body: SaleActionResponse = { id: saved.id, status: saved.status };
   return NextResponse.json(body);

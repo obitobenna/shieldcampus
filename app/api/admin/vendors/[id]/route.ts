@@ -41,5 +41,6 @@ export const POST = withApi(async (request: Request, ctx: { params: Promise<{ id
   if (!saved) throw new ApiError(409, "Someone else just updated this shop. Refresh the page.");
 
   revalidateTag("vendors");
+  revalidateTag("impact");
   return NextResponse.json(saved);
 });
