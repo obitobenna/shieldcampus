@@ -10,7 +10,7 @@ import { LessonMarkdown } from "@/components/lesson/lesson-markdown";
 import { PidginLoader } from "@/components/lesson/pidgin-loader";
 import { TESTNET_CHECKPOINT_LABELS, TestnetWalletGuide } from "@/components/lesson/testnet-wallet-guide";
 import { TutorPanel } from "@/components/tutor/tutor-panel";
-import { requirePageSession } from "@/lib/auth";
+import { requireLearnerPage } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { getCachedPidgin } from "@/lib/lesson-translations";
 import { getLessonBySlug, getPublicQuiz, getUserProgress, listLessons, markStarted, parseStringArray, passMark } from "@/lib/lessons";
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LessonPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { lang: langParam } = await searchParams;
-  const session = await requirePageSession(undefined, `/learn/${slug}`);
+  const session = await requireLearnerPage(`/learn/${slug}`);
   const lesson = await getLessonBySlug(slug);
   if (!lesson) notFound();
 

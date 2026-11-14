@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { ApiError, parseJson, withApi } from "@/lib/api";
-import { requireApiSession } from "@/lib/auth";
+import { LEARNER_ROLES, requireApiSession } from "@/lib/auth";
 import { getLessonBySlug } from "@/lib/lessons";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkpointUpdateSchema } from "@/lib/validation/lessons";
 
 export const POST = withApi(async (request: Request, ctx: { params: Promise<{ slug: string }> }) => {
-  const session = await requireApiSession();
+  const session = await requireApiSession(LEARNER_ROLES);
   await enforceRateLimit(`checkpoints:${session.userId}`, 120, 10 * 60);
 
   const { slug } = await ctx.params;

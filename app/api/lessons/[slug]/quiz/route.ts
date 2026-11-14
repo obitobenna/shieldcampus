@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiError, parseJson, withApi } from "@/lib/api";
-import { requireApiSession } from "@/lib/auth";
+import { LEARNER_ROLES, requireApiSession } from "@/lib/auth";
 import { getLessonBySlug, gradeQuiz, listLessons, parseStringArray, type GradeResult } from "@/lib/lessons";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,7 +13,7 @@ export interface QuizResponse extends GradeResult {
 }
 
 export const POST = withApi(async (request: Request, ctx: { params: Promise<{ slug: string }> }) => {
-  const session = await requireApiSession();
+  const session = await requireApiSession(LEARNER_ROLES);
   await enforceRateLimit(
     `quiz:${session.userId}`,
     30,

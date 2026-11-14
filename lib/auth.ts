@@ -57,6 +57,16 @@ export async function requirePageSession(roles?: UserRole[], next?: string): Pro
   return session;
 }
 
+// Lessons and the tutor are for students and vendors. Admins run the platform and don't take lessons.
+export const LEARNER_ROLES: UserRole[] = ["student", "vendor"];
+
+/** Page guard for /learn: logged-out users go to login, admins go to their dashboard. */
+export async function requireLearnerPage(next: string): Promise<Session> {
+  const session = await requirePageSession(undefined, next);
+  if (!LEARNER_ROLES.includes(session.profile.role)) redirect(homeForRole(session.profile.role));
+  return session;
+}
+
 // For API routes: throws ApiError(401/403), turned into JSON by withApi().
 export async function requireApiSession(roles?: UserRole[]): Promise<Session> {
   const session = await getSession();

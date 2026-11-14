@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiError, withApi } from "@/lib/api";
-import { requireApiSession } from "@/lib/auth";
+import { LEARNER_ROLES, requireApiSession } from "@/lib/auth";
 import { generatePidgin, getCachedPidgin } from "@/lib/lesson-translations";
 import { getLessonBySlug } from "@/lib/lessons";
 import { llmConfigured } from "@/lib/llm";
@@ -10,7 +10,7 @@ export const maxDuration = 60;
 
 // POST /api/lessons/[slug]/translate — makes sure a Pidgin version exists (cached for everyone).
 export const POST = withApi(async (_request: Request, ctx: { params: Promise<{ slug: string }> }) => {
-  const session = await requireApiSession();
+  const session = await requireApiSession(LEARNER_ROLES);
   const { slug } = await ctx.params;
   const lesson = await getLessonBySlug(slug);
   if (!lesson) throw new ApiError(404, "That lesson doesn't exist.");

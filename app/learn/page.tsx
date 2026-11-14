@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Steps, type Step } from "@/components/ui/steps";
-import { requirePageSession } from "@/lib/auth";
+import { requireLearnerPage } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { formatZec } from "@/lib/format";
 import { getUserProgress, listLessons } from "@/lib/lessons";
@@ -14,7 +14,7 @@ import { COIN, UNIFIED_PREFIX } from "@/lib/network";
 export const metadata: Metadata = { title: "Lessons" };
 
 export default async function LearnPage() {
-  const session = await requirePageSession(undefined, "/learn");
+  const session = await requireLearnerPage("/learn");
   const [lessons, progress] = await Promise.all([listLessons(), getUserProgress(session.userId)]);
 
   const completedCount = lessons.filter((l) => progress.get(l.id)?.status === "completed").length;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiError, parseJson, withApi } from "@/lib/api";
-import { requireApiSession } from "@/lib/auth";
+import { LEARNER_ROLES, requireApiSession } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { getLessonBySlug } from "@/lib/lessons";
 import { LlmError, llmConfigured, streamCompletion, type ChatMessage } from "@/lib/llm";
@@ -35,7 +35,7 @@ export interface TutorHistoryItem {
 
 // GET /api/tutor?lesson=slug — the student's recent conversation for this lesson.
 export const GET = withApi(async (request: Request) => {
-  const session = await requireApiSession();
+  const session = await requireApiSession(LEARNER_ROLES);
   const slug = new URL(request.url).searchParams.get("lesson");
   const lesson = slug ? await getLessonBySlug(slug) : null;
 
@@ -55,7 +55,7 @@ export const GET = withApi(async (request: Request) => {
 
 // POST /api/tutor — streams the tutor's answer as plain text.
 export const POST = withApi(async (request: Request) => {
-  const session = await requireApiSession();
+  const session = await requireApiSession(LEARNER_ROLES);
   const input = await parseJson(request, tutorRequestSchema);
   const question = input.messages[input.messages.length - 1]!.content;
 
