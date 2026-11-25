@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { ApiError, parseJson, withApi } from "@/lib/api";
 import { requireApiSession } from "@/lib/auth";
 import type { VendorStatus } from "@/lib/database.types";
-import { env } from "@/lib/env";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { shopSchema } from "@/lib/validation/account";
 import { getShopForOwner, uniqueSlug } from "@/lib/vendors";
 import { checkShieldedAddress } from "@/lib/zcash";
+import { getNetwork } from "@/lib/active-network";
 
 export interface ShopResponse {
   status: VendorStatus;
@@ -22,7 +22,7 @@ export const PUT = withApi(async (request: Request) => {
   await enforceRateLimit(`shop:${session.userId}`, 20, 10 * 60);
   const input = await parseJson(request, shopSchema);
 
-  const check = checkShieldedAddress(input.zcashAddress, env().ZCASH_NETWORK);
+  const check = checkShieldedAddress(input.zcashAddress, await getNetwork());
   if (!check.ok) throw new ApiError(422, check.message, { zcashAddress: check.message });
 
   const db = createAdminClient();

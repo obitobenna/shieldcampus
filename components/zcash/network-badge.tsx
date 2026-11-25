@@ -1,10 +1,13 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
-import { IS_TESTNET } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 
 // "TESTNET" marker for the header and every payment screen. Renders nothing on mainnet.
-// Works in server and client components (the network is inlined at build time).
+// Reads the active network from NetworkProvider, so it works in server and client components.
 export function NetworkBadge({ className }: { className?: string }) {
-  if (!IS_TESTNET) return null;
+  const { isTestnet } = useNetwork();
+  if (!isTestnet) return null;
   return (
     <Badge tone="warning" dot className={className}>
       <span title="Zcash testnet: TAZ coins have no real value">Testnet</span>

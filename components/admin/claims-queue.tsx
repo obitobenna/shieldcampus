@@ -15,7 +15,8 @@ import { fetchJson } from "@/lib/fetch-json";
 import { formatZec } from "@/lib/format";
 import { shortAddress } from "@/lib/zcash";
 import type { AdminClaimResponse } from "@/app/api/admin/claims/[id]/route";
-import { COIN } from "@/lib/network";
+import { coinFor, networkOfAddress } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 
 export interface QueueClaim {
   id: number;
@@ -101,6 +102,7 @@ export function ClaimsQueue({ claims }: { claims: QueueClaim[] }) {
 }
 
 function ClaimRow({ claim, open, onToggle, onOpen }: { claim: QueueClaim; open: boolean; onToggle: () => void; onOpen: () => void }) {
+  const { network } = useNetwork();
   const router = useRouter();
   const [busy, setBusy] = useState<"approve" | "reject" | "paid" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -168,7 +170,7 @@ function ClaimRow({ claim, open, onToggle, onOpen }: { claim: QueueClaim; open: 
           <p className="truncate text-sm">{claim.lessonTitle}</p>
           <p className="truncate font-mono text-xs text-ink-muted">{shortAddress(claim.address, 10, 6)}</p>
         </div>
-        <p className="font-mono text-sm">{formatZec(claim.amountZec)} {COIN}</p>
+        <p className="font-mono text-sm">{formatZec(claim.amountZec)} {coinFor(networkOfAddress(claim.address) ?? network)}</p>
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
           <span className="hidden md:inline-flex">
             <ClaimBadge status={claim.status} />

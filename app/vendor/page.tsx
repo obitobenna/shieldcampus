@@ -7,11 +7,11 @@ import { Steps, type Step } from "@/components/ui/steps";
 import { ShopForm } from "@/components/vendor/shop-form";
 import { requirePageSession } from "@/lib/auth";
 import type { VendorStatus } from "@/lib/database.types";
-import { env } from "@/lib/env";
 import { getUserProgress, listLessons } from "@/lib/lessons";
 import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { getShopForOwner } from "@/lib/vendors";
-import { COIN } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
+import { getNetwork } from "@/lib/active-network";
 
 export const metadata: Metadata = { title: "Your shop" };
 
@@ -25,13 +25,14 @@ const STATUS: Record<VendorStatus, { label: string; tone: BadgeTone }> = {
 const VENDOR_LESSONS = ["wallet-setup", "send-receive-privately", "viewing-keys"];
 
 export default async function VendorHomePage() {
+  const { coin: COIN } = await getNetworkInfo();
   const session = await requirePageSession(["vendor"], "/vendor");
   const [shop, lessons, progress] = await Promise.all([
     getShopForOwner(session.userId),
     listLessons(),
     getUserProgress(session.userId),
   ]);
-  const network = env().ZCASH_NETWORK;
+  const network = await getNetwork();
   const recommended = lessons.filter((l) => VENDOR_LESSONS.includes(l.slug));
   const recommendedDone = recommended.filter((l) => progress.get(l.id)?.status === "completed").length;
 

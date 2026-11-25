@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronRight, Inbox } from "lucide-react";
 import { fetchJson } from "@/lib/fetch-json";
 import { formatNaira } from "@/lib/format";
-import { COIN } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 import type { IncomingResponse, IncomingSale } from "@/app/api/pos/incoming/route";
 
 const timeFmt = new Intl.DateTimeFormat("en-NG", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
@@ -13,6 +13,7 @@ const timeFmt = new Intl.DateTimeFormat("en-NG", { hour: "2-digit", minute: "2-d
 // Open payment requests, including ones customers start by scanning the shop QR sticker.
 // Refreshes every 5 seconds while the tab is visible.
 export function IncomingPayments({ initial }: { initial: IncomingSale[] }) {
+  const { coin: COIN } = useNetwork();
   const [sales, setSales] = useState(initial);
 
   useEffect(() => {

@@ -11,12 +11,15 @@ import { claimsToday } from "@/lib/rewards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Suspense } from "react";
 import { NetworkStatus, NetworkStatusFallback } from "@/components/zcash/network-status";
-import { COIN, DEMO_SUFFIX } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
+import { NetworkSwitch } from "@/components/admin/network-switch";
 
 export const metadata: Metadata = { title: "Admin" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
+  const { coin: COIN, demoSuffix: DEMO_SUFFIX, network } = await getNetworkInfo();
   await requirePageSession(["admin"], "/admin");
   const e = env();
   const db = createAdminClient();
@@ -54,9 +57,11 @@ export default async function AdminPage() {
     rejectionReason: c.rejection_reason,
   }));
 
-  const paid = queue.filter((c) => c.status === "paid");
+  // Totals for the active network only, so TAZ and ZEC are never added together.
+  const onNetwork = queue.filter((c) => networkOfAddress(c.address) === network);
+  const paid = onNetwork.filter((c) => c.status === "paid");
   const paidZec = paid.reduce((s, c) => s + c.amountZec, 0);
-  const owed = queue.filter((c) => c.status === "submitted" || c.status === "approved").reduce((s, c) => s + c.amountZec, 0);
+  const owed = onNetwork.filter((c) => c.status === "submitted" || c.status === "approved").reduce((s, c) => s + c.amountZec, 0);
 
   return (
     <div className="page py-10 md:py-14">
@@ -80,10 +85,14 @@ export default async function AdminPage() {
 
       <StatGrid className="mt-8 grid-cols-2 lg:grid-cols-4">
         <Stat label="Claims today" value={`${formatCount(today)} / ${formatCount(e.DAILY_REWARD_CAP)}`} note="Daily cap (Lagos time)" />
-        <Stat label="Waiting" value={formatCount(queue.filter((c) => c.status !== "paid" && c.status !== "rejected").length)} note={`${formatZec(owed)} ${COIN} to pay`} />
+        <Stat label="Waiting" value={formatCount(onNetwork.filter((c) => c.status !== "paid" && c.status !== "rejected").length)} note={`${formatZec(owed)} ${COIN} to pay`} />
         <Stat label="Paid out" value={`${formatZec(paidZec)} ${COIN}`} accent note={`${paid.length} rewards · ≈ ${formatNaira(Math.round(paidZec * rates.ngn))}`} />
         <Stat label="Reward size" value={`${formatZec(e.REWARD_ZEC)} ${COIN}`} note="Set by REWARD_ZEC" />
       </StatGrid>
+
+      <div className="mt-6">
+        <NetworkSwitch />
+      </div>
 
       <div className="mt-6 flex items-start gap-3 rounded-lg border border-line bg-surface p-4 text-sm">
         <ShieldCheck aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-brand" />

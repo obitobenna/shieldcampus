@@ -2,6 +2,8 @@ import "server-only";
 import { env } from "@/lib/env";
 import { checkShieldedAddress, type ZcashNetwork } from "@/lib/zcash";
 import { nodeRpc, RpcError } from "@/lib/zcash-rpc";
+import { getNetwork } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
 
 export interface ZcashStatus {
   network: ZcashNetwork;
@@ -19,28 +21,36 @@ export interface ZcashStatus {
 }
 
 const TTL_MS = 30_000;
-let cache: { status: ZcashStatus; at: number } | null = null;
-let inflight: Promise<ZcashStatus> | null = null;
+const cache = new Map<ZcashNetwork, { status: ZcashStatus; at: number }>();
+const inflight = new Map<ZcashNetwork, Promise<ZcashStatus>>();
+
+/** Reward fund address for a network: REWARD_FUND_ADDRESS_MAINNET / _TESTNET, else REWARD_FUND_ADDRESS if it belongs to that network. */
+export function rewardFundAddress(network: ZcashNetwork): string | undefined {
+  const e = env();
+  const specific = network === "mainnet" ? e.REWARD_FUND_ADDRESS_MAINNET : e.REWARD_FUND_ADDRESS_TESTNET;
+  if (specific) return specific;
+  return e.REWARD_FUND_ADDRESS && networkOfAddress(e.REWARD_FUND_ADDRESS) === network ? e.REWARD_FUND_ADDRESS : undefined;
+}
 
 const EXPECTED_CHAIN: Record<ZcashNetwork, string> = { mainnet: "main", testnet: "test" };
 
-async function probe(): Promise<ZcashStatus> {
+async function probe(network: ZcashNetwork): Promise<ZcashStatus> {
   const e = env();
-  const network = e.ZCASH_NETWORK;
-  const fundAddressOk = e.REWARD_FUND_ADDRESS ? checkShieldedAddress(e.REWARD_FUND_ADDRESS, network).ok : null;
+  const fund = rewardFundAddress(network);
+  const fundAddressOk = fund ? checkShieldedAddress(fund, network).ok : null;
   const base: ZcashStatus = {
     network,
     configured: false,
     reachable: false,
     blockHeight: null,
     nodeChain: null,
-    warning: fundAddressOk === false ? `REWARD_FUND_ADDRESS is not a valid ${network} shielded address.` : null,
+    warning: fundAddressOk === false ? `The ${network} reward fund address is not a valid ${network} shielded address.` : null,
     verifier: e.PAYMENT_VERIFIER,
     fundAddressOk,
     checkedAt: new Date().toISOString(),
   };
 
-  const rpc = nodeRpc();
+  const rpc = nodeRpc(network);
   if (!rpc) return base;
 
   try {
@@ -65,7 +75,7 @@ async function probe(): Promise<ZcashStatus> {
       blockHeight,
       nodeChain,
       warning: wrongChain
-        ? `The node at ZCASH_RPC_URL is on "${nodeChain}", but ZCASH_NETWORK is ${network}. Use a ${network} endpoint.`
+        ? `The configured Zcash node is on "${nodeChain}", but ShieldCampus is on ${network}. Set ZCASH_RPC_URL_${network.toUpperCase()} to a ${network} endpoint.`
         : base.warning,
     };
   } catch (err) {
@@ -75,16 +85,20 @@ async function probe(): Promise<ZcashStatus> {
   }
 }
 
-/** Network + node status, cached for 30 seconds. Never throws. */
+/** Active network + node status, cached for 30 seconds per network. Never throws. */
 export async function getZcashStatus(): Promise<ZcashStatus> {
-  if (cache && Date.now() - cache.at < TTL_MS) return cache.status;
-  inflight ??= probe()
-    .then((status) => {
-      cache = { status, at: Date.now() };
-      return status;
-    })
-    .finally(() => {
-      inflight = null;
-    });
-  return inflight;
+  const network = await getNetwork();
+  const hit = cache.get(network);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.status;
+  let p = inflight.get(network);
+  if (!p) {
+    p = probe(network)
+      .then((status) => {
+        cache.set(network, { status, at: Date.now() });
+        return status;
+      })
+      .finally(() => inflight.delete(network));
+    inflight.set(network, p);
+  }
+  return p;
 }

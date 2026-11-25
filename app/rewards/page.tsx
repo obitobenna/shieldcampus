@@ -14,11 +14,13 @@ import { getZecRates } from "@/lib/rates";
 import { getClaimsForUser } from "@/lib/rewards";
 import { explorerUrl } from "@/lib/verification";
 import { shortAddress } from "@/lib/zcash";
-import { COIN, DEMO_SUFFIX, UNIFIED_PREFIX } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Rewards" };
 
 export default async function RewardsPage() {
+  const { coin: COIN, demoSuffix: DEMO_SUFFIX, unifiedPrefix: UNIFIED_PREFIX } = await getNetworkInfo();
   const session = await requirePageSession(["student"], "/rewards");
   const e = env();
   const [lessons, progress, claims, rates] = await Promise.all([
@@ -71,7 +73,7 @@ export default async function RewardsPage() {
         {eligible.map((lesson) => {
           const passed = progress.get(lesson.id)?.status === "completed";
           const claim = claims.find((c) => c.lesson_id === lesson.id);
-          const link = claim?.txid ? explorerUrl(claim.txid, e.ZCASH_NETWORK) : null;
+          const link = claim?.txid ? explorerUrl(claim.txid, networkOfAddress(claim.zcash_address) ?? "testnet") : null;
 
           return (
             <li key={lesson.id} className="rounded-lg border border-line bg-surface">

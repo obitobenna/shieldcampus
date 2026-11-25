@@ -8,6 +8,7 @@ import { claimsToday } from "@/lib/rewards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { claimSchema } from "@/lib/validation/rewards";
 import { checkShieldedAddress, formatZatoshis, zecToZatoshis } from "@/lib/zcash";
+import { getNetwork } from "@/lib/active-network";
 
 export interface ClaimResponse {
   id: number;
@@ -40,7 +41,7 @@ export const POST = withApi(async (request: Request) => {
 
   const address = session.profile.zcash_address;
   if (!address) throw new ApiError(409, "Add your shielded address on your Account page first. That's where your reward will be sent.");
-  const check = checkShieldedAddress(address, e.ZCASH_NETWORK);
+  const check = checkShieldedAddress(address, await getNetwork());
   if (!check.ok) throw new ApiError(409, `Your saved address can't receive this reward: ${check.message}`);
 
   const { data: existing, error: existingError } = await db

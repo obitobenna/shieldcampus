@@ -9,11 +9,12 @@ import { requireLearnerPage } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { formatZec } from "@/lib/format";
 import { getUserProgress, listLessons } from "@/lib/lessons";
-import { COIN, UNIFIED_PREFIX } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 
 export const metadata: Metadata = { title: "Lessons" };
 
 export default async function LearnPage() {
+  const { coin: COIN, unifiedPrefix: UNIFIED_PREFIX } = await getNetworkInfo();
   const session = await requireLearnerPage("/learn");
   const [lessons, progress] = await Promise.all([listLessons(), getUserProgress(session.userId)]);
 

@@ -16,6 +16,9 @@ const schema = z.object({
   // Zcash node JSON-RPC (Zebra-compatible: getblockcount, getblockchaininfo). Optional.
   // A hosted provider URL, or a local Zebra (http://127.0.0.1:18232 on testnet).
   ZCASH_RPC_URL: z.string().url("ZCASH_RPC_URL must be a full http(s) URL").optional(),
+  // Per-network node endpoints, used when an admin switches networks. ZCASH_RPC_URL is the fallback for both.
+  ZCASH_RPC_URL_MAINNET: z.string().url("ZCASH_RPC_URL_MAINNET must be a full http(s) URL").optional(),
+  ZCASH_RPC_URL_TESTNET: z.string().url("ZCASH_RPC_URL_TESTNET must be a full http(s) URL").optional(),
   ZCASH_RPC_API_KEY: z.string().optional(),
   // Header the provider expects the key in. Leave the default unless your provider says otherwise.
   ZCASH_RPC_API_KEY_HEADER: z.string().min(1).default("x-api-key"),
@@ -34,6 +37,9 @@ const schema = z.object({
 
   // The reward fund's public address and its VIEW-ONLY key. Never a spending key or seed phrase.
   REWARD_FUND_ADDRESS: z.string().trim().optional(),
+  // Per-network reward fund addresses. REWARD_FUND_ADDRESS is used for whichever network it belongs to.
+  REWARD_FUND_ADDRESS_MAINNET: z.string().trim().optional(),
+  REWARD_FUND_ADDRESS_TESTNET: z.string().trim().optional(),
   REWARD_FUND_VIEWING_KEY: z
     .string()
     .trim()

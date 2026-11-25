@@ -15,7 +15,7 @@ import { cn } from "@/lib/cn";
 import { getCachedPidgin } from "@/lib/lesson-translations";
 import { getLessonBySlug, getPublicQuiz, getUserProgress, listLessons, markStarted, parseStringArray, passMark } from "@/lib/lessons";
 import { llmConfigured } from "@/lib/llm";
-import { COIN, IS_TESTNET } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 import { tutorStarters } from "@/lib/tutor-starters";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ lang?: string }> };
@@ -27,6 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function LessonPage({ params, searchParams }: Props) {
+  const { coin: COIN, isTestnet: IS_TESTNET } = await getNetworkInfo();
   const { slug } = await params;
   const { lang: langParam } = await searchParams;
   const session = await requireLearnerPage(`/learn/${slug}`);

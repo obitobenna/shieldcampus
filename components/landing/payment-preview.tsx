@@ -1,14 +1,15 @@
 import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatNaira } from "@/lib/format";
-import { COIN, DEMO_SUFFIX, UNIFIED_PREFIX } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 import { formatZatoshis, ngnToZatoshis } from "@/lib/zcash";
 
 const EXAMPLE_NGN = 2500;
 
 // Product preview shown in the hero until a real campus photo is added (see lib/site.ts).
 // Clearly labelled as an example; it does not claim to be a real transaction.
-export function PaymentPreview({ ngnPerZec }: { ngnPerZec: number }) {
+export async function PaymentPreview({ ngnPerZec }: { ngnPerZec: number }) {
+  const { coin: COIN, demoSuffix: DEMO_SUFFIX, unifiedPrefix: UNIFIED_PREFIX } = await getNetworkInfo();
   const zec = formatZatoshis(ngnToZatoshis(EXAMPLE_NGN, ngnPerZec));
   return (
     <figure className="relative">

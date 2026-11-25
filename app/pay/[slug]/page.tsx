@@ -6,6 +6,9 @@ import { NetworkBadge } from "@/components/zcash/network-badge";
 import { getZecRates } from "@/lib/rates";
 import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { getApprovedShopBySlug } from "@/lib/vendors";
+import { getNetwork } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
+import { Alert } from "@/components/ui/alert";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,8 @@ export default async function PayShopPage({ params }: Props) {
   const { slug } = await params;
   const shop = await getApprovedShopBySlug(slug);
   if (!shop) notFound();
-  const rates = await getZecRates();
+  const [rates, network] = await Promise.all([getZecRates(), getNetwork()]);
+  const ready = networkOfAddress(shop.zcash_address) === network;
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pb-12 pt-6">
@@ -41,7 +45,14 @@ export default async function PayShopPage({ params }: Props) {
           <span className="truncate">{shop.location}</span>
         </p>
       </div>
-      <CustomerPay slug={shop.slug} shopName={shop.business_name} ngnPerZec={rates.ngn} />
+      {ready ? (
+        <CustomerPay slug={shop.slug} shopName={shop.business_name} ngnPerZec={rates.ngn} />
+      ) : (
+        <Alert tone="warning" title="This shop isn't ready for payments yet">
+          ShieldCampus is on Zcash {network}, and this shop hasn&apos;t saved a {network} address yet. Ask the vendor to update it, or pay
+          another way for now.
+        </Alert>
+      )}
     </div>
   );
 }

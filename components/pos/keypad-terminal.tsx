@@ -12,11 +12,13 @@ import { SALE_MAX_NGN, SALE_MIN_NGN } from "@/lib/validation/pos";
 import { formatZatoshis, ngnToZatoshis } from "@/lib/zcash";
 import type { CreateSaleResponse } from "@/app/api/pos/sales/route";
 import { NetworkBadge } from "@/components/zcash/network-badge";
-import { COIN, DEMO_VALUE_NOTE, IS_TESTNET } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
+import { DEMO_VALUE_NOTE } from "@/lib/network";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "0", "back"] as const;
 
 export function KeypadTerminal({ ngnPerZec, rateIsFallback }: { ngnPerZec: number; rateIsFallback: boolean }) {
+  const { coin: COIN, isTestnet: IS_TESTNET } = useNetwork();
   const router = useRouter();
   const [digits, setDigits] = useState("");
   const [note, setNote] = useState("");

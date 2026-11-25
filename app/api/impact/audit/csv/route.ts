@@ -13,12 +13,13 @@ const csvCell = (v: string | number | null) => {
 export const GET = withApi(async () => {
   if (!(await hasAuditAccess())) throw new ApiError(401, "Unlock the audit view with the PIN first.");
   const rows = await getAuditRows();
-  const header = ["date_utc", "type", "id", "amount_zec", "amount_ngn", "txid", "verification"];
+  const header = ["date_utc", "type", "id", "network", "amount_zec", "amount_ngn", "txid", "verification"];
   const lines = rows.map((r) =>
     [
       r.date,
       r.type === "reward" ? "reward_payout" : "merchant_payment",
       `${r.type === "reward" ? "R" : "S"}${r.id}`,
+      r.network ?? "unknown",
       r.amountZec.toFixed(8),
       r.amountNgn === null ? null : r.amountNgn.toFixed(2),
       r.txid,

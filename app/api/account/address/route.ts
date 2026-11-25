@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { ApiError, parseJson, withApi } from "@/lib/api";
 import { requireApiSession } from "@/lib/auth";
-import { env } from "@/lib/env";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { addressUpdateSchema } from "@/lib/validation/account";
 import { checkShieldedAddress } from "@/lib/zcash";
+import { getNetwork } from "@/lib/active-network";
 
 // Students save the shielded address their rewards are paid to.
 // (Vendors set their receiving address on their shop profile instead.)
@@ -14,7 +14,7 @@ export const PUT = withApi(async (request: Request) => {
   await enforceRateLimit(`address:${session.userId}`, 10, 60 * 60, "Too many address changes. Try again in an hour.");
   const { zcashAddress } = await parseJson(request, addressUpdateSchema);
 
-  const check = checkShieldedAddress(zcashAddress, env().ZCASH_NETWORK);
+  const check = checkShieldedAddress(zcashAddress, await getNetwork());
   if (!check.ok) throw new ApiError(422, check.message, { zcashAddress: check.message });
 
   const db = createAdminClient();

@@ -8,7 +8,7 @@ import type { VendorCategory } from "@/lib/database.types";
 import { cn } from "@/lib/cn";
 import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { getVendorDirectory, type DirectoryVendor } from "@/lib/vendors";
-import { COIN } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 
 export const metadata: Metadata = {
   title: "Vendors who accept ZEC",
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function VendorsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+  const { coin: COIN } = await getNetworkInfo();
   const { category } = await searchParams;
   let vendors: DirectoryVendor[] = [];
   let failed = false;

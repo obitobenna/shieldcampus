@@ -10,12 +10,14 @@ import { getZecRates } from "@/lib/rates";
 import { cancelAbandonedSales, isApproved, listIncoming } from "@/lib/sales";
 import { IncomingPayments } from "@/components/pos/incoming-payments";
 import { getShopForOwner } from "@/lib/vendors";
-import { COIN, DEMO_SUFFIX } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Till" };
 export const dynamic = "force-dynamic";
 
 export default async function PosPage() {
+  const { coin: COIN, demoSuffix: DEMO_SUFFIX, network } = await getNetworkInfo();
   const session = await requirePageSession(["vendor"], "/pos");
   const shop = await getShopForOwner(session.userId);
 
@@ -34,6 +36,20 @@ export default async function PosPage() {
                 : "Your shop is waiting for approval. This usually happens within a few hours during the conference."
           }
           action={<ButtonLink href="/vendor">Go to your shop</ButtonLink>}
+        />
+      </div>
+    );
+  }
+
+  if (networkOfAddress(shop.zcash_address) !== network) {
+    return (
+      <div className="page py-10">
+        <EmptyState
+          className="mx-auto max-w-lg"
+          icon={Store}
+          title={`Add your ${network} address to open the till`}
+          body={`ShieldCampus has switched to Zcash ${network}. Your saved shop address is for the other network, so customers couldn't pay it. Open your wallet on ${network}, copy your ${network === "mainnet" ? "u1" : "utest1"} address and save it on your Shop page.`}
+          action={<ButtonLink href="/vendor">Update shop address</ButtonLink>}
         />
       </div>
     );

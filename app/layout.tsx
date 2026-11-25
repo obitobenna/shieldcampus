@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SiteHeader } from "@/components/site-header";
+import { NetworkProvider } from "@/components/network-context";
+import { getNetwork } from "@/lib/active-network";
 import "./globals.css";
 
 // Self-hosted variable fonts (from @fontsource-variable) so builds never depend on Google Fonts.
@@ -61,7 +63,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const network = await getNetwork();
   return (
     // suppressHydrationWarning: browser extensions (e.g. Grammarly) inject attributes on
     // <html>/<body> before React hydrates. This only ignores attribute diffs on these two tags.
@@ -73,8 +76,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <SiteHeader />
-        <main id="main">{children}</main>
+        <NetworkProvider network={network}>
+          <SiteHeader />
+          <main id="main">{children}</main>
+        </NetworkProvider>
       </body>
     </html>
   );

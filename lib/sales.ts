@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { SaleRow, VendorRow } from "@/lib/database.types";
 import { getZecRates } from "@/lib/rates";
 import { buildZip321Uri, formatZatoshis, ngnToZatoshis } from "@/lib/zcash";
+import { ApiError } from "@/lib/api";
+import { getNetwork } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
 
 /** A sale, only if it belongs to the given vendor. */
 export async function getSaleForVendor(saleId: number, vendorId: string): Promise<SaleRow | null> {
@@ -66,6 +69,15 @@ export interface CreatedSale {
  * ZIP-321 request to the shop's address. The sale never records who the customer is.
  */
 export async function createSale(shop: VendorRow, amountNgn: number, note: string | null): Promise<CreatedSale> {
+  // After an admin switches networks, a shop's saved address may belong to the other network.
+  // Never show a customer a request their wallet can't pay (or that would be mislabelled).
+  const network = await getNetwork();
+  if (networkOfAddress(shop.zcash_address) !== network) {
+    throw new ApiError(
+      409,
+      `ShieldCampus is on Zcash ${network}, but this shop's saved address is for a different network. The vendor needs to save a ${network} address on their Shop page.`,
+    );
+  }
   const rates = await getZecRates();
   const zats = ngnToZatoshis(amountNgn, rates.ngn);
   const db = createAdminClient();

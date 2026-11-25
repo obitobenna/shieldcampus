@@ -12,7 +12,10 @@ import { getZecRates } from "@/lib/rates";
 import { EVENT_NAME } from "@/lib/site";
 import { Suspense } from "react";
 import { NetworkStatus, NetworkStatusFallback } from "@/components/zcash/network-status";
-import { COIN, DEMO_SUFFIX } from "@/lib/network";
+import { networkInfo, type ZcashNetwork } from "@/lib/network";
+import { getNetwork } from "@/lib/active-network";
+import { Badge } from "@/components/ui/badge";
+import type { NetworkImpact } from "@/lib/impact";
 
 export const metadata: Metadata = {
   title: "Impact",
@@ -30,6 +33,7 @@ export default async function ImpactPage() {
     console.error("[impact] report unavailable", err);
   }
   const rates = await getZecRates();
+  const active = await getNetwork();
 
   return (
     <>
@@ -64,37 +68,16 @@ export default async function ImpactPage() {
           <>
             <section aria-label="Onboarding" className="mt-10">
               <h2 className="eyebrow">Onboarding</h2>
-              <StatGrid className="mt-3 grid-cols-2 lg:grid-cols-4">
+              <StatGrid className="mt-3 grid-cols-2 lg:grid-cols-3 [&>*:last-child]:col-span-2 lg:[&>*:last-child]:col-span-1">
                 <Stat label="Students registered" value={formatCount(report.students)} />
                 <Stat label="Lessons completed" value={formatCount(report.lessonsCompleted)} />
                 <Stat label="Wallets set up" value={formatCount(report.walletsSetUp)} note="Passed the wallet setup lesson" />
-                <Stat
-                  label="First private transactions"
-                  value={formatCount(report.firstPrivateTransactions)}
-                  accent
-                  note="Students who received a shielded reward"
-                />
               </StatGrid>
             </section>
 
-            <section aria-label="Payments" className="mt-8">
-              <h2 className="eyebrow">Shielded payments</h2>
-              <StatGrid className="mt-3 grid-cols-2 lg:grid-cols-4">
-                <Stat
-                  label="Rewards paid"
-                  value={formatCount(report.rewardsPaid)}
-                  accent
-                  note={`${formatZec(report.rewardsPaidZec)} ${COIN} · ≈ ${formatNaira(Math.round(report.rewardsPaidZec * rates.ngn))}${DEMO_SUFFIX}`}
-                />
-                <Stat label="Active vendors" value={formatCount(report.activeVendors)} note="Approved shops accepting ZEC" />
-                <Stat label="Merchant payments" value={formatCount(report.merchantPayments)} accent note="Paid at campus vendors" />
-                <Stat
-                  label="Merchant volume"
-                  value={formatNaira(report.merchantVolumeNgn)}
-                  note={`${formatZec(report.merchantVolumeZec)} ${COIN} at each sale's rate${DEMO_SUFFIX}`}
-                />
-              </StatGrid>
-            </section>
+            {(["mainnet", "testnet"] as const).map((n) => (
+              <NetworkSection key={n} network={n} figures={report.byNetwork[n]} ngnPerZec={rates.ngn} live={n === active} />
+            ))}
 
             <section aria-label="Trends" className="mt-10 grid gap-6 lg:grid-cols-2">
               <div className="rounded-lg border border-line bg-surface p-5 sm:p-6">
@@ -104,6 +87,8 @@ export default async function ImpactPage() {
                 <PaymentsChart days={report.days} />
               </div>
             </section>
+
+            <p className="mt-3 text-xs text-ink-muted">Daily counts include both networks.</p>
 
             <details className="group mt-4 rounded-lg border border-line bg-surface">
               <summary className="cursor-pointer list-none px-5 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
@@ -141,5 +126,40 @@ export default async function ImpactPage() {
       </div>
       <SiteFooter />
     </>
+  );
+}
+
+// One network's payment figures. Mainnet is real ZEC; testnet is practice TAZ with no value,
+// labelled so it can never be read as mainnet activity.
+function NetworkSection({ network, figures, ngnPerZec, live }: { network: ZcashNetwork; figures: NetworkImpact; ngnPerZec: number; live: boolean }) {
+  const { coin, demoSuffix, isTestnet } = networkInfo(network);
+  return (
+    <section aria-label={`${isTestnet ? "Testnet" : "Mainnet"} payments`} className="mt-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="eyebrow">{isTestnet ? "Testnet · practice coins (TAZ), no real value" : "Mainnet · real ZEC"}</h2>
+        {live ? <Badge tone={isTestnet ? "warning" : "success"} dot>Live now</Badge> : null}
+      </div>
+      <StatGrid className="mt-3 grid-cols-2 lg:grid-cols-4">
+        <Stat
+          label="First private transactions"
+          value={formatCount(figures.studentsPaid)}
+          accent={!isTestnet}
+          note="Students who received a shielded reward"
+        />
+        <Stat
+          label="Rewards paid"
+          value={formatCount(figures.rewardsPaid)}
+          accent={!isTestnet}
+          note={`${formatZec(figures.rewardsPaidZec)} ${coin} · ≈ ${formatNaira(Math.round(figures.rewardsPaidZec * ngnPerZec))}${demoSuffix}`}
+        />
+        <Stat label="Vendors" value={formatCount(figures.activeVendors)} note={`Approved shops with a ${network} address`} />
+        <Stat
+          label="Vendor payments"
+          value={formatCount(figures.merchantPayments)}
+          accent={!isTestnet}
+          note={`${formatNaira(figures.merchantVolumeNgn)} · ${formatZec(figures.merchantVolumeZec)} ${coin}${demoSuffix}`}
+        />
+      </StatGrid>
+    </section>
   );
 }

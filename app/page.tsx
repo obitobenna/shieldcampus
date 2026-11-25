@@ -11,9 +11,10 @@ import { env } from "@/lib/env";
 import { formatZec } from "@/lib/format";
 import { getZecRates } from "@/lib/rates";
 import { CAMPUS_PHOTOS } from "@/lib/site";
-import { COIN } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 
 export default async function HomePage() {
+  const { coin: COIN } = await getNetworkInfo();
   const reward = formatZec(env().REWARD_ZEC);
   const rates = await getZecRates();
 

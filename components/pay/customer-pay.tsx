@@ -8,7 +8,7 @@ import { Field, Input } from "@/components/ui/field";
 import { PaymentRequest } from "@/components/zcash/payment-request";
 import { fetchJson } from "@/lib/fetch-json";
 import { formatNaira } from "@/lib/format";
-import { COIN, DEMO_SUFFIX } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 import { SALE_MAX_NGN, SALE_MIN_NGN } from "@/lib/validation/pos";
 import { formatZatoshis, ngnToZatoshis } from "@/lib/zcash";
 import type { CustomerPayResponse } from "@/app/api/pay/[slug]/route";
@@ -18,6 +18,7 @@ type Phase = "waiting" | "paid" | "cancelled" | "expired";
 
 // Customer side of "scan the shop QR": type the price, then pay from your own wallet.
 export function CustomerPay({ slug, shopName, ngnPerZec }: { slug: string; shopName: string; ngnPerZec: number }) {
+  const { coin: COIN, demoSuffix: DEMO_SUFFIX } = useNetwork();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);

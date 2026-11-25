@@ -121,13 +121,20 @@ export class ZcashRpcClient {
   }
 }
 
-/** Client for the Zcash node (ZCASH_RPC_URL), or null when it isn't configured. */
-export function nodeRpc(): ZcashRpcClient | null {
+/** Node endpoint for a network: ZCASH_RPC_URL_MAINNET / _TESTNET, falling back to ZCASH_RPC_URL. */
+export function nodeRpcUrl(network: "mainnet" | "testnet"): string | undefined {
   const e = env();
-  if (!e.ZCASH_RPC_URL) return null;
+  return (network === "mainnet" ? e.ZCASH_RPC_URL_MAINNET : e.ZCASH_RPC_URL_TESTNET) ?? e.ZCASH_RPC_URL;
+}
+
+/** Client for the Zcash node on the given network, or null when none is configured. */
+export function nodeRpc(network: "mainnet" | "testnet"): ZcashRpcClient | null {
+  const e = env();
+  const url = nodeRpcUrl(network);
+  if (!url) return null;
   return new ZcashRpcClient({
     label: "Zcash node",
-    url: e.ZCASH_RPC_URL,
+    url,
     apiKey: e.ZCASH_RPC_API_KEY,
     apiKeyHeader: e.ZCASH_RPC_API_KEY_HEADER,
     user: e.ZCASH_RPC_USER,

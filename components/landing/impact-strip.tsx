@@ -23,8 +23,18 @@ export async function ImpactStrip() {
     <StatGrid className="grid-cols-2 lg:grid-cols-4">
       <Stat label="Students learning" value={formatCount(summary.students)} />
       <Stat label="Wallets set up" value={formatCount(summary.walletsSetUp)} />
-      <Stat label="Shielded rewards paid" value={formatCount(summary.rewardsPaid)} accent />
-      <Stat label="Payments at vendors" value={formatCount(summary.merchantPayments)} accent />
+      <Stat
+        label="Shielded rewards paid"
+        value={formatCount(summary.rewardsPaid.mainnet + summary.rewardsPaid.testnet)}
+        accent
+        note={`${formatCount(summary.rewardsPaid.mainnet)} mainnet · ${formatCount(summary.rewardsPaid.testnet)} testnet`}
+      />
+      <Stat
+        label="Payments at vendors"
+        value={formatCount(summary.merchantPayments.mainnet + summary.merchantPayments.testnet)}
+        accent
+        note={`${formatCount(summary.merchantPayments.mainnet)} mainnet · ${formatCount(summary.merchantPayments.testnet)} testnet`}
+      />
     </StatGrid>
   );
 }

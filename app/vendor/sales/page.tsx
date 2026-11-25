@@ -11,7 +11,7 @@ import { formatCount, formatNaira, formatZec } from "@/lib/format";
 import { lagosDayStart } from "@/lib/rewards";
 import { isApproved, listSalesForVendor, totals } from "@/lib/sales";
 import { getShopForOwner } from "@/lib/vendors";
-import { COIN } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 
 export const metadata: Metadata = { title: "Sales" };
 export const dynamic = "force-dynamic";
@@ -25,6 +25,7 @@ const STATUS: Record<SaleStatus, { label: string; tone: BadgeTone }> = {
 const timeFmt = new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" });
 
 export default async function SalesPage() {
+  const { coin: COIN } = await getNetworkInfo();
   const session = await requirePageSession(["vendor"], "/vendor/sales");
   const shop = await getShopForOwner(session.userId);
   const sales = shop ? await listSalesForVendor(shop.id, 300) : [];

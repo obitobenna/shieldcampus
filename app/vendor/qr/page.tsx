@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ShopQrSticker } from "@/components/vendor/shop-qr-sticker";
 import { requirePageSession } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { IS_TESTNET } from "@/lib/network";
+import { getNetworkInfo } from "@/lib/active-network";
 import { isApproved } from "@/lib/sales";
 import { getShopForOwner } from "@/lib/vendors";
 
@@ -12,6 +12,7 @@ export const metadata: Metadata = { title: "Shop QR" };
 export const dynamic = "force-dynamic";
 
 export default async function ShopQrPage() {
+  const { isTestnet: IS_TESTNET } = await getNetworkInfo();
   const session = await requirePageSession(["vendor"], "/vendor/qr");
   const shop = await getShopForOwner(session.userId);
   if (!isApproved(shop)) redirect("/vendor");

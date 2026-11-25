@@ -12,7 +12,7 @@ import { VENDOR_CATEGORY_LABEL } from "@/lib/vendor-categories";
 import { VENDOR_CATEGORIES } from "@/lib/validation/account";
 import { checkShieldedAddress, type ZcashNetwork } from "@/lib/zcash";
 import type { ShopResponse } from "@/app/api/vendor/shop/route";
-import { IS_TESTNET, UNIFIED_PREFIX } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 
 interface ShopValues {
   businessName: string;
@@ -31,6 +31,7 @@ export function ShopForm({
   status: VendorStatus | null;
   network: ZcashNetwork;
 }) {
+  const { isTestnet: IS_TESTNET, unifiedPrefix: UNIFIED_PREFIX } = useNetwork();
   const router = useRouter();
   const [v, setV] = useState<ShopValues>(
     initial ?? { businessName: "", category: "", location: "", description: "", zcashAddress: "" },

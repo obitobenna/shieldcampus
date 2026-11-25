@@ -12,7 +12,7 @@ import type { SaleStatus } from "@/lib/database.types";
 import { fetchJson } from "@/lib/fetch-json";
 import { formatNaira } from "@/lib/format";
 import type { SaleActionResponse } from "@/app/api/pos/sales/[id]/route";
-import { COIN, DEMO_SUFFIX } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 
 interface Sale {
   id: number;
@@ -29,6 +29,7 @@ interface Sale {
 }
 
 export function ChargeScreen({ sale, autoVerify = false }: { sale: Sale; autoVerify?: boolean }) {
+  const { coin: COIN, demoSuffix: DEMO_SUFFIX } = useNetwork();
   const router = useRouter();
   const [status, setStatus] = useState<SaleStatus>(sale.status);
   const [txid, setTxid] = useState("");

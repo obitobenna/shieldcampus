@@ -10,9 +10,10 @@ import { ButtonLink } from "@/components/ui/button";
 import { LogoutButton } from "@/components/logout-button";
 import { requirePageSession } from "@/lib/auth";
 import type { UserRole } from "@/lib/database.types";
-import { env } from "@/lib/env";
 import { formatDate } from "@/lib/format";
 import { getShopForOwner } from "@/lib/vendors";
+import { getNetwork } from "@/lib/active-network";
+import { networkOfAddress } from "@/lib/network";
 
 export const metadata: Metadata = { title: "Your account" };
 
@@ -30,7 +31,8 @@ export default async function AccountPage({
   const { profile, email, userId } = await requirePageSession(undefined, "/account");
   const params = await searchParams;
   const shop = profile.role === "vendor" ? await getShopForOwner(userId) : null;
-  const network = env().ZCASH_NETWORK;
+  const network = await getNetwork();
+  const wrongNetwork = !!profile.zcash_address && networkOfAddress(profile.zcash_address) !== network;
 
   return (
     <div className="page py-10 md:py-14">
@@ -71,8 +73,22 @@ export default async function AccountPage({
               icon={<Wallet aria-hidden className="h-5 w-5" />}
               title="Shielded address"
               description="Your ShieldCampus rewards are paid to this address. It's safe to share: people can pay you with it, but nobody can spend from it."
-              aside={profile.zcash_address ? <Badge tone="success">Saved</Badge> : <Badge tone="warning">Not added</Badge>}
+              aside={
+                wrongNetwork ? (
+                  <Badge tone="warning">Wrong network</Badge>
+                ) : profile.zcash_address ? (
+                  <Badge tone="success">Saved</Badge>
+                ) : (
+                  <Badge tone="warning">Not added</Badge>
+                )
+              }
             >
+              {wrongNetwork ? (
+                <Alert tone="warning" title={`ShieldCampus is now on Zcash ${network}`} className="mb-5">
+                  Your saved address is for the other network, so rewards can&apos;t be sent to it. Switch your wallet to {network}, copy
+                  your {network === "mainnet" ? "u1" : "utest1"} address and save it below.
+                </Alert>
+              ) : null}
               {!profile.zcash_address ? (
                 <p className="mb-5 text-sm text-ink-muted">
                   Don&apos;t have a wallet yet? Lesson 3 walks you through it step by step.{" "}

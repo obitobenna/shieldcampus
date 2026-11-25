@@ -8,7 +8,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { NetworkBadge } from "@/components/zcash/network-badge";
-import { COIN, IS_TESTNET } from "@/lib/network";
+import { useNetwork } from "@/components/network-context";
 
 // A ZIP-321 payment request: big QR code, "Open in Zcash wallet" link, and copy buttons
 // for the address, amount and memo (for wallets that can't scan or open links).
@@ -30,6 +30,7 @@ export function PaymentRequest({
   walletFirst?: boolean;
   className?: string;
 }) {
+  const { coin: COIN, isTestnet: IS_TESTNET } = useNetwork();
   const [svg, setSvg] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
