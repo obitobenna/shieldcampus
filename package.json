@@ -11,6 +11,7 @@
     "test": "vitest run",
     "seed": "node --env-file=.env.local --import tsx scripts/seed.ts",
     "make-admin": "node --env-file=.env.local --import tsx scripts/make-admin.ts",
+    "reset-for-mainnet": "node --env-file=.env.local --import tsx scripts/reset-for-mainnet.ts",
     "translate": "node --env-file=.env.local --import tsx scripts/translate.ts"
   },
   "engines": {
