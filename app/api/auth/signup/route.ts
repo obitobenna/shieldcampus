@@ -11,8 +11,11 @@ export type SignupResponse = { status: "signed_in"; redirectTo: string } | { sta
 const DUPLICATE = "An account with this email already exists. Log in instead.";
 
 export const POST = withApi(async (request: Request) => {
-  await enforceRateLimit(`signup:ip:${clientIp(request)}`, 8, 15 * 60, "Too many sign-ups from this network. Try again in 15 minutes.");
+  // Generous per-IP limit: a whole class on campus WiFi shares one public IP.
+  await enforceRateLimit(`signup:ip:${clientIp(request)}`, 100, 15 * 60, "Too many sign-ups from this network. Try again in 15 minutes.");
   const input = await parseJson(request, signupSchema);
+  // Stops one address being hammered with confirmation emails.
+  await enforceRateLimit(`signup:email:${input.email}`, 3, 60 * 60, "Too many sign-up attempts for this email. Try again in an hour.");
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({

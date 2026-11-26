@@ -8,7 +8,8 @@ import { loginSchema } from "@/lib/validation/auth";
 export type LoginResponse = { redirectTo: string };
 
 export const POST = withApi(async (request: Request) => {
-  await enforceRateLimit(`login:ip:${clientIp(request)}`, 30, 15 * 60);
+  // Generous per-IP limit (shared campus WiFi); the per-email limit below guards against password guessing.
+  await enforceRateLimit(`login:ip:${clientIp(request)}`, 200, 15 * 60);
   const input = await parseJson(request, loginSchema);
   await enforceRateLimit(
     `login:email:${input.email}`,
